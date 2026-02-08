@@ -1,0 +1,14 @@
+/* Styles for Track Project Button */
+.mrg--rs {
+    margin-right: 10px;
+}
+
+#track-project-btn {
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+#track-project-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}

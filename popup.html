@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mostaql Job Notifier</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🔔 منبه مشاريع مستقل</h1>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="notifications">التنبيهات</button>
+      <button class="tab-btn" data-tab="settings">الإعدادات</button>
+    </div>
+    
+    <!-- Tab: Notifications -->
+    <div class="tab-content active" id="notifications">
+      <div class="section">
+        <h2>📂 التصنيفات المراقبة</h2>
+        <div class="toggle-item">
+          <span>تطوير البرمجيات</span>
+          <label class="switch">
+            <input type="checkbox" id="development" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-item">
+          <span>الذكاء الاصطناعي</span>
+          <label class="switch">
+            <input type="checkbox" id="ai" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="toggle-item">
+          <span>جميع المشاريع</span>
+          <label class="switch">
+            <input type="checkbox" id="all">
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2>⚙️ خيارات التنبيه</h2>
+        <div class="toggle-item">
+          <span>🔊 الصوت</span>
+          <label class="switch">
+            <input type="checkbox" id="sound" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="select-item">
+          <span>⏱️ الفحص كل</span>
+          <select id="interval">
+            <option value="1">دقيقة</option>
+            <option value="2">دقيقتين</option>
+            <option value="5">5 دقائق</option>
+            <option value="10">10 دقائق</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2>📊 الإحصائيات</h2>
+        <div class="stat-item">
+          <span>آخر فحص:</span>
+          <span id="lastCheck">-</span>
+        </div>
+        <div class="stat-item">
+          <span>مشاريع جديدة اليوم:</span>
+          <span id="todayCount">0</span>
+        </div>
+        <div class="stat-item">
+          <span>إجمالي المشاريع المسجلة:</span>
+          <span id="totalSeen">0</span>
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2>👀 المشاريع المراقبة</h2>
+        <div id="trackedProjectsList" class="tracked-list">
+          <p class="empty-msg">لا توجد مشاريع مراقبة حالياً</p>
+        </div>
+      </div>
+      
+      <div class="section">
+        <h2>🧪 اختبار</h2>
+        <div class="test-buttons">
+          <button id="testNotificationBtn" class="btn secondary">🔔 تجربة الإشعار</button>
+          <button id="testSoundBtn" class="btn secondary">🔊 تجربة الصوت</button>
+        </div>
+        <div id="testStatus" class="test-status hidden"></div>
+      </div>
+      
+      <div class="actions">
+        <button id="checkNowBtn" class="btn primary">🔍 فحص الآن</button>
+        <button id="clearHistoryBtn" class="btn danger">🗑️ مسح السجل</button>
+      </div>
+      
+      <div id="checkResult" class="result-message hidden"></div>
+    </div>
+    
+   <!-- Tab: Settings -->
+<div class="tab-content" id="settings">
+  
+  <div class="section">
+    <h2>🔧 تصحيح الأخطاء</h2>
+    <button id="debugBtn" class="btn secondary full-width">🐛 فحص الاتصال بمستقل</button>
+    <div id="debugResult" class="debug-result hidden"></div>
+  </div>
+  
+  <div class="actions">
+    <button id="saveSettingsBtn" class="btn primary full-width">💾 حفظ الإعدادات</button>
+  </div>
+  
+  <div id="settingsSaved" class="success-message hidden">تم حفظ الإعدادات بنجاح ✓</div>
+</div>
+    
+    <!-- Footer -->
+    <div class="footer">
+      <a href="https://mostaql.com/projects" target="_blank">فتح مستقل</a>
+    </div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
