@@ -16,79 +16,59 @@ function injectTrackButton() {
     if (!buttonContainer) {
         buttonContainer = document.createElement('div');
         buttonContainer.id = 'mostaql-ext-btn-container';
-        buttonContainer.style.display = 'inline-flex';
-        buttonContainer.style.alignItems = 'center';
-        buttonContainer.style.flexDirection = 'row';
-        buttonContainer.style.flexWrap = 'nowrap';
-        buttonContainer.style.whiteSpace = 'nowrap'; // Force single line text
-        buttonContainer.style.width = 'max-content'; // Force container to fit content
-        buttonContainer.style.minWidth = 'max-content';
-        buttonContainer.style.gap = '5px';
-        buttonContainer.style.marginRight = '10px';
-        buttonContainer.style.flexShrink = '0'; // Prevent container from shrinking
+        // Note: Styles are now handled by #mostaql-ext-btn-container in content.css
 
-        // Find the main "Apply" button or similar primary action
-        const primaryBtn = actionContainer.querySelector('a.btn-primary, button.btn-primary, .btn-primary');
+        // Find the main "Apply" button or similar primary action. 
+        // Also look for '.btn-info' because "Edit Deal" (طلب تعديل الصفقة) uses btn-info.
+        let primaryBtn = actionContainer.querySelector('a.btn-primary, button.btn-primary, .btn-primary, a.btn-info, button.btn-info, .btn-info');
+
+        // FIX: If the button is part of a btn-group (Split Button), target the group wrapper 
+        // to avoid inserting our buttons INSIDE the native button group.
+        if (primaryBtn && primaryBtn.parentElement && primaryBtn.parentElement.classList.contains('btn-group')) {
+            primaryBtn = primaryBtn.parentElement;
+        }
 
         if (primaryBtn) {
             // Re-insert BEFORE (The "Opposite")
-            // Visual Goal: [Container] [Primary] 
-            // In RTL Row: Container (Right), Primary (Left of Container)
             primaryBtn.insertAdjacentElement('beforebegin', buttonContainer);
 
-            // Adjust margins for "Container First"
-            buttonContainer.style.marginRight = '0px';
-            buttonContainer.style.marginLeft = '10px';
-
-            // Remove Explicit Order (Let DOM decide)
-            buttonContainer.style.removeProperty('order');
-
-            // Ensure the parent container flexes correctly and isn't constrained
+            // Ensure the parent container flexes correctly
             if (primaryBtn.parentElement) {
                 const parent = primaryBtn.parentElement;
 
-                // 1. Force Parent Layout
-                parent.style.setProperty('display', 'flex', 'important');
-                parent.style.setProperty('flex-direction', 'row', 'important');
-                parent.style.setProperty('align-items', 'center', 'important');
-                parent.style.setProperty('flex-wrap', 'nowrap', 'important');
-                parent.style.setProperty('justify-content', 'flex-start', 'important'); // Aligns to Right in RTL
-                parent.style.setProperty('width', 'auto', 'important');
-                parent.style.setProperty('max-width', 'none', 'important');
-                parent.style.setProperty('min-width', 'max-content', 'important');
-                parent.style.setProperty('overflow', 'visible', 'important');
+                // Minimal inline override to ensure flex behavior
+                parent.style.display = 'flex';
+                parent.style.alignItems = 'center';
 
-                // 2. Tame the Primary Button
-                primaryBtn.style.removeProperty('order'); // Remove explicit order
-                primaryBtn.style.setProperty('float', 'none', 'important');
-                primaryBtn.style.setProperty('flex', '0 0 auto', 'important');
-                primaryBtn.style.setProperty('width', 'auto', 'important');
-                primaryBtn.style.setProperty('max-width', 'none', 'important');
-                // Remove potential conflict margins
-                primaryBtn.style.setProperty('margin-left', '0px', 'important');
-                primaryBtn.style.setProperty('margin-right', '0px', 'important');
+                // Reset primary button constraints (now applied to the group if it was a group)
+                primaryBtn.style.float = 'none';
+                primaryBtn.style.marginLeft = '0px';
+                primaryBtn.style.marginRight = '0px';
             }
         } else {
-            // Fallback: Append to the action container
+            // Fallback
             actionContainer.appendChild(buttonContainer);
             if (actionContainer) {
                 actionContainer.style.display = 'flex';
-                actionContainer.style.flexDirection = 'row';
                 actionContainer.style.alignItems = 'center';
-                actionContainer.style.flexWrap = 'nowrap';
-                actionContainer.style.width = 'auto';
-                actionContainer.style.minWidth = 'max-content';
             }
         }
+    }
+
+    // START CHECKPOINT: Clear any old/legacy elements (like the separate select box) 
+    // to ensure only the new Split Button and Track Button exist.
+    // We only do this if we haven't already injected the correct group (to avoid clearing on every potential re-run if logic changes).
+    if (buttonContainer && !document.getElementById('chatgpt-group')) {
+        buttonContainer.innerHTML = '';
     }
 
     // --- Track Button ---
     if (!document.getElementById('track-project-btn')) {
         const trackBtn = document.createElement('button');
         trackBtn.id = 'track-project-btn';
-        trackBtn.className = 'btn btn-success'; // Removed mrg--rs as gap handles spacing
+        trackBtn.className = 'btn btn-success'; // Base Mostaql class + our overrides
         trackBtn.innerHTML = '<i class="fa fa-fw fa-eye"></i> مراقبة المشروع';
-        trackBtn.style.order = '2'; // Force detailed order (swap with ChatGPT)
+        // Order handled by DOM position now usually, or CSS
 
         // Check if already tracked
         const projectId = getProjectId();
@@ -109,35 +89,153 @@ function injectTrackButton() {
         buttonContainer.appendChild(trackBtn);
     }
 
-    // --- ChatGPT Button ---
-    if (!document.getElementById('chatgpt-project-btn')) {
-        const chatGptBtn = document.createElement('button');
-        chatGptBtn.id = 'chatgpt-project-btn';
-        chatGptBtn.className = 'btn btn-primary';
-        chatGptBtn.style.order = '1'; // Force detailed order (First)
-        // Using a chat icon (fa-comments or similar available in Mostaql's FA)
-        chatGptBtn.innerHTML = '<i class="fa fa-fw fa-comments-o"></i> استشارة ChatGPT';
-        // chatGptBtn.style.marginRight = '10px'; // Handled by gap
-        chatGptBtn.style.backgroundColor = '#2386c8'; // Forces Mostaql Blue
-        chatGptBtn.style.borderColor = '#2386c8';
-        chatGptBtn.title = 'نسخ تفاصيل المشروع وفتح ChatGPT';
+    // --- ChatGPT Split Button ---
+    if (!document.getElementById('chatgpt-group')) {
+        const chatGptGroupId = 'chatgpt-group';
 
-        chatGptBtn.addEventListener('click', handleChatGptClick);
+        // Create Button Group Wrapper
+        const group = document.createElement('div');
+        group.id = chatGptGroupId;
+        group.className = 'btn-group dropdown mostaql-custom-dropdown';
+        // Default Bootstrap behavior
 
-        buttonContainer.appendChild(chatGptBtn);
+
+        // 1. Main Action Button (Anchor to match Mostaql's "Apply" button structure)
+        const mainBtn = document.createElement('a');
+        mainBtn.id = 'chatgpt-main-btn';
+        mainBtn.className = 'btn btn-primary';
+        mainBtn.href = 'javascript:void(0);';
+        mainBtn.innerHTML = '<i class="fa fa-fw fa-comments-o"></i> <span class="action-text">استشارة AI</span>';
+        mainBtn.title = 'استخدام القالب الافتراضي أو المحدد';
+
+        // Store selected prompt info in dataset
+        mainBtn.dataset.promptId = 'default_proposal';
+
+        mainBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            // Visual feedback
+            mainBtn.style.opacity = '0.8';
+            setTimeout(() => mainBtn.style.opacity = '1', 200);
+
+            handleChatGptClick(mainBtn.dataset.promptId);
+        });
+
+        // 2. Dropdown Toggle Button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.id = 'chatgpt-dropdown-toggle';
+        toggleBtn.className = 'btn btn-primary dropdown-toggle';
+        toggleBtn.innerHTML = '<i class="fa fa-caret-down"></i>';
+        toggleBtn.setAttribute('data-toggle', 'dropdown');
+
+        // Custom Toggle Logic
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            group.classList.toggle('open');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!group.contains(e.target)) {
+                group.classList.remove('open');
+            }
+        });
+
+        // 3. Dropdown Menu List
+        const menuList = document.createElement('ul');
+        menuList.className = 'dropdown-menu dropdown-left dropdown-menu-left'; // Exact matches
+        menuList.setAttribute('role', 'menu');
+
+        // Function to render menu items
+        const renderMenu = () => {
+            loadPrompts((prompts) => {
+                menuList.innerHTML = '';
+
+                prompts.forEach((p, index) => {
+                    const li = document.createElement('li');
+                    if (mainBtn.dataset.promptId === p.id) {
+                        li.className = 'active'; // Mark current as active
+                    }
+
+                    const a = document.createElement('a');
+                    a.href = 'javascript:void(0);';
+                    a.textContent = p.title;
+                    a.onclick = (e) => {
+                        e.preventDefault();
+                        mainBtn.dataset.promptId = p.id; // Update current selection
+                        mainBtn.title = `استخدام القالب: ${p.title}`;
+
+                        group.classList.remove('open');
+                        renderMenu(); // Re-render to update active class
+                    };
+
+                    li.appendChild(a);
+                    menuList.appendChild(li);
+                });
+
+                // Separator
+                const divLi = document.createElement('li');
+                divLi.className = 'divider';
+                menuList.appendChild(divLi);
+
+                // Add New Prompt
+                const addLi = document.createElement('li');
+                const addLink = document.createElement('a');
+                addLink.href = 'javascript:void(0);';
+                addLink.innerHTML = '<i class="fa fa-plus"></i> إضافة قالب جديد';
+                addLink.onclick = (e) => {
+                    e.preventDefault();
+                    group.classList.remove('open');
+                    createPromptModal(renderMenu);
+                };
+                addLi.appendChild(addLink);
+                menuList.appendChild(addLi);
+            });
+        };
+
+        // Initial Render
+        renderMenu();
+
+        group.appendChild(mainBtn);
+        group.appendChild(toggleBtn);
+        group.appendChild(menuList);
+
+        buttonContainer.appendChild(group);
     }
 }
 
-function setButtonTracked(btn) {
-    btn.innerHTML = '<i class="fa fa-fw fa-eye-slash"></i> إلغاء المراقبة';
-    btn.classList.remove('btn-success');
-    btn.classList.add('btn-danger');
-}
+function handleChatGptClick(promptId) {
+    const projectData = extractProjectData(); // Gets title and url
+    const description = getProjectDescription();
 
-function setButtonUntracked(btn) {
-    btn.innerHTML = '<i class="fa fa-fw fa-eye"></i> مراقبة المشروع';
-    btn.classList.remove('btn-danger');
-    btn.classList.add('btn-success');
+    if (!description) {
+        alert('لم يتم العثور على وصف المشروع.');
+        return;
+    }
+
+    loadPrompts((prompts) => {
+        let templateContent = '';
+        const selectedPrompt = prompts.find(p => p.id === promptId);
+
+        if (selectedPrompt) {
+            templateContent = selectedPrompt.content;
+        } else {
+            // Fallback
+            const defaults = getDefaultPrompts();
+            templateContent = defaults[0].content;
+        }
+
+        // Replace variables
+        let prompt = templateContent
+            .replace(/{title}/g, projectData.title)
+            .replace(/{url}/g, projectData.url)
+            .replace(/{description}/g, description);
+
+        // Save prompt to storage for the ChatGPT content script to pick up
+        chrome.storage.local.set({ 'pendingChatGptPrompt': prompt }, () => {
+            // Open ChatGPT in a new tab
+            window.open('https://chatgpt.com/', '_blank');
+        });
+    });
 }
 
 function getProjectId() {
@@ -183,67 +281,131 @@ function getProjectDescription() {
     return '';
 }
 
-function handleTrackClick(btn) {
-    if (!isContextValid()) {
-        alert('حدث خطأ في الملحق (تم تحديث الإضافة). يرجى تحديث الصفحة للمتابعة.');
-        return;
-    }
+// --- Prompt Management ---
 
-    const projectId = getProjectId();
-    if (!projectId) return;
-
-    chrome.storage.local.get(['trackedProjects'], (data) => {
-        if (chrome.runtime.lastError) return;
-        const tracked = data.trackedProjects || {};
-
-        if (tracked[projectId]) {
-            // Untrack
-            delete tracked[projectId];
-            chrome.storage.local.set({ trackedProjects: tracked }, () => {
-                if (!chrome.runtime.lastError) {
-                    setButtonUntracked(btn);
-                }
-            });
-        } else {
-            // Track
-            const projectData = extractProjectData();
-            tracked[projectId] = projectData;
-            chrome.storage.local.set({ trackedProjects: tracked }, () => {
-                if (!chrome.runtime.lastError) {
-                    setButtonTracked(btn);
-                }
-            });
-        }
-    });
-}
-
-function handleChatGptClick() {
-    const projectData = extractProjectData(); // Gets title and url
-    const description = getProjectDescription();
-
-    if (!description) {
-        alert('لم يتم العثور على وصف المشروع.');
-        return;
-    }
-
-    // Prepare the prompt
-    const prompt = `أريد مساعدتك في كتابة عرض لهذا المشروع على منصة مستقل.
+function getDefaultPrompts() {
+    return [
+        {
+            id: 'default_proposal',
+            title: 'كتابة عرض مشروع',
+            content: `أريد مساعدتك في كتابة عرض لهذا المشروع على منصة مستقل.
     
-عنوان المشروع: ${projectData.title}
+عنوان المشروع: {title}
     
 تفاصيل المشروع:
-${description}
+{description}
     
-رابط المشروع: ${projectData.url}
+رابط المشروع: {url}
     
-يرجى كتابة عرض احترافي ومقنع يوضح خبرتي في هذا المجال ويشرح كيف يمكنني تنفيذ المطلوب بدقة.`;
+يرجى كتابة عرض احترافي ومقنع يوضح خبرتي في هذا المجال ويشرح كيف يمكنني تنفيذ المطلوب بدقة.`
+        }
+    ];
+}
 
-    // Save prompt to storage for the ChatGPT content script to pick up
-    chrome.storage.local.set({ 'pendingChatGptPrompt': prompt }, () => {
-        // Open ChatGPT in a new tab
-        window.open('https://chatgpt.com/', '_blank');
+function loadPrompts(callback) {
+    chrome.storage.local.get(['customPrompts'], (data) => {
+        const custom = data.customPrompts || [];
+        const defaults = getDefaultPrompts();
+        callback([...defaults, ...custom]);
     });
 }
+
+function savePrompt(title, content, callback) {
+    chrome.storage.local.get(['customPrompts'], (data) => {
+        const custom = data.customPrompts || [];
+        custom.push({
+            id: 'custom_' + Date.now(),
+            title: title,
+            content: content
+        });
+        chrome.storage.local.set({ customPrompts: custom }, callback);
+    });
+}
+
+function createPromptModal(onSave) {
+    if (document.getElementById('mostaql-prompt-modal')) return;
+
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'mostaql-prompt-modal';
+
+    const modalContent = document.createElement('div');
+    modalContent.className = 'mostaql-modal-content';
+
+    // Title Input
+    const groupTitle = document.createElement('div');
+    groupTitle.className = 'mostaql-form-group';
+
+    const titleLabel = document.createElement('label');
+    titleLabel.className = 'mostaql-form-label';
+    titleLabel.textContent = 'عنوان القالب:';
+
+    const titleInput = document.createElement('input');
+    titleInput.type = 'text';
+    titleInput.className = 'mostaql-form-input';
+
+    groupTitle.appendChild(titleLabel);
+    groupTitle.appendChild(titleInput);
+
+    // Content Input
+    const groupContent = document.createElement('div');
+    groupContent.className = 'mostaql-form-group';
+
+    const contentLabel = document.createElement('label');
+    contentLabel.className = 'mostaql-form-label';
+    contentLabel.textContent = 'محتوى القالب:';
+
+    const contentHelp = document.createElement('div');
+    contentHelp.className = 'mostaql-form-help';
+    contentHelp.textContent = 'المتغيرات المتاحة: {title}, {description}, {url}';
+
+    const contentInput = document.createElement('textarea');
+    contentInput.className = 'mostaql-form-textarea';
+    contentInput.rows = '6';
+
+    groupContent.appendChild(contentLabel);
+    groupContent.appendChild(contentInput);
+    groupContent.appendChild(contentHelp);
+
+    // Buttons
+    const btnContainer = document.createElement('div');
+    btnContainer.className = 'mostaql-modal-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.textContent = 'حفظ القالب';
+    saveBtn.className = 'btn-modal-primary';
+    saveBtn.onclick = () => {
+        const t = titleInput.value.trim();
+        const c = contentInput.value.trim();
+        if (t && c) {
+            saveBtn.textContent = 'جاري الحفظ...';
+            saveBtn.disabled = true;
+            savePrompt(t, c, () => {
+                document.body.removeChild(modalOverlay);
+                onSave();
+            });
+        } else {
+            alert('يرجى ملء جميع الحقول');
+        }
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'إلغاء';
+    cancelBtn.className = 'btn-modal-secondary';
+    cancelBtn.onclick = () => {
+        document.body.removeChild(modalOverlay);
+    };
+
+    btnContainer.appendChild(cancelBtn);
+    btnContainer.appendChild(saveBtn);
+
+    modalContent.appendChild(groupTitle);
+    modalContent.appendChild(groupContent);
+    modalContent.appendChild(btnContainer);
+
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+}
+
 
 // Initial injection
 if (document.readyState === 'loading') {

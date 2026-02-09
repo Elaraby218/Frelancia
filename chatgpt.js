@@ -114,6 +114,8 @@ function injectPrompt() {
                     chrome.storage.local.remove(['pendingChatGptPrompt']);
 
                     // Try to click send after a delay
+                    // MODIFICATION: Auto-send disabled as per user request.
+                    /*
                     setTimeout(() => {
                         const sendButton = findSendButton();
                         if (sendButton) {
@@ -122,7 +124,8 @@ function injectPrompt() {
                         } else {
                             console.warn('Mostaql Job Notifier: Send button not found');
                         }
-                    }, 1000);
+                    }, 1000); 
+                    */
 
                 }, 500);
             } else if (attempts >= maxAttempts) {

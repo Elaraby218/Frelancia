@@ -1,14 +1,257 @@
-/* Styles for Track Project Button */
-.mrg--rs {
-    margin-right: 10px;
+/* CSS for custom dropdown behavior since we might not have access to page's Bootstrap JS */
+.mostaql-custom-dropdown.open .dropdown-menu {
+    display: block;
+}
+
+/* Ensure the dropdown menu appears correctly */
+.mostaql-custom-dropdown .dropdown-menu {
+    right: 0;
+    /* Align right for RTL */
+    left: auto;
+    text-align: right;
+    min-width: 200px;
+    margin-top: 2px;
+    border-radius: 4px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+}
+
+.mostaql-custom-dropdown .dropdown-menu>li>a {
+    padding: 8px 15px;
+    color: #333;
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.mostaql-custom-dropdown .dropdown-menu>li>a:hover {
+    background-color: #f5f5f5;
+    color: #262626;
+}
+
+.mostaql-custom-dropdown .dropdown-menu .divider {
+    height: 1px;
+    margin: 9px 0;
+    overflow: hidden;
+    background-color: #e5e5e5;
+}
+
+/* Selected item styling */
+.mostaql-custom-dropdown .dropdown-menu>li.active>a {
+    color: #fff;
+    background-color: #2386c8;
+}
+
+/* Override button styles to match specific Mostaql instances if needed */
+/* Default Bootstrap btn-group styles should handle border-radius and margins 
+   But just in case we need to force RTL specific border radii if Mostaql's CSS doesn't handle mixed-element groups effectively */
+/* The user requested matching 'Apply' button. Standard btn-group classes usually suffice. 
+   Removing the manual Overrides to test native behavior. */
+
+/* Modal styles (kept from before, ensured consistency) */
+/* ... (Modal styles are fine in previous content.css, will just append/ensure this doesn't overwrite necessary parts if I strictly overwrite) */
+/* Wait, I should preserve the modal styles I added earlier. The write_to_file with Overwrite:true destroys previous content. I must include previous Modal CSS. */
+
+/* Main Container */
+#mostaql-ext-btn-container {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+/* FIX: Force Split Button to behave as a single inline-flex unit to prevent wrapping */
+#chatgpt-group.btn-group {
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch;
+    vertical-align: middle !important;
+}
+
+/* Reset floats because we are using flex */
+#chatgpt-group .btn {
+    float: none !important;
+}
+
+/* RTL specific styling for the Split Button parts */
+/* Main Button (Right side in RTL) */
+#chatgpt-main-btn {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    margin-left: -1px !important;
+}
+
+/* Toggle Button (Left side in RTL) */
+#chatgpt-dropdown-toggle {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+/* Modal Styling */
+#mostaql-prompt-modal {
+    background-color: rgba(0, 0, 0, 0.5);
+    /* Re-adding backdrop since inline style was removed in JS refactor */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+    transition: opacity 0.3s;
+}
+
+.mostaql-modal-content {
+    background: #fff;
+    padding: 24px;
+    border-radius: 8px;
+    width: 450px;
+    max-width: 90%;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    font-family: 'Hacen Tunisia', sans-serif;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.mostaql-form-group {
+    margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: right;
+}
+
+.mostaql-form-label {
+    font-weight: 600;
+    color: #333;
+    font-size: 14px;
+}
+
+.mostaql-form-input,
+.mostaql-form-textarea {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fdfdfd;
+    transition: border-color 0.2s;
+    font-family: inherit;
+}
+
+.mostaql-form-input:focus,
+.mostaql-form-textarea:focus {
+    border-color: #2386c8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(35, 134, 200, 0.1);
+}
+
+.mostaql-form-help {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+}
+
+.mostaql-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    /* RTL: Left side */
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+}
+
+.btn-modal-primary {
+    background-color: #2386c8;
+    color: white;
+    border: none;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-modal-secondary {
+    background-color: #eee;
+    color: #555;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-modal-primary:hover {
+    background-color: #1b6fa8;
+}
+
+.btn-modal-secondary:hover {
+    background-color: #e0e0e0;
 }
 
 #track-project-btn {
+    border-radius: 4px;
+    height: 38px;
+    /* Match typical btn-lg or default height */
+    padding: 0 15px;
     font-weight: 600;
-    transition: all 0.3s ease;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s;
 }
 
-#track-project-btn:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+.btn-track-active {
+    background-color: #dc3545;
+    color: #fff;
+    border-color: #bd2130;
+}
+
+
+/* FIX: Repair Native Mostaql Button Groups (e.g. "Edit Deal") 
+   that get broken by the flex parent container */
+.header_action-wide-container .btn-group {
+    display: inline-flex !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    align-items: stretch !important;
+    flex-shrink: 0 !important;
+    vertical-align: middle !important;
+}
+
+.header_action-wide-container .btn-group>.btn {
+    float: none !important;
+    border-radius: 0;
+}
+
+/* Restore border radius for the first and last buttons in the native group 
+   assuming RTL context since Mostaql is Arabic */
+.header_action-wide-container .btn-group>.btn:first-child {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.header_action-wide-container .btn-group>.btn:last-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
 }
