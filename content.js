@@ -175,8 +175,12 @@ function injectTrackButton() {
                     a.style.textDecoration = 'none';
                     a.onclick = (e) => {
                         e.preventDefault();
+                        // Update state
                         mainBtn.dataset.promptId = p.id;
                         mainBtn.title = `استخدام القالب: ${p.title}`;
+
+                        // Execute immediately
+                        handleChatGptClick(p.id);
 
                         group.classList.remove('open');
                         renderMenu();
@@ -458,6 +462,13 @@ function getDefaultPrompts() {
     
 عنوان المشروع: {title}
     
+الميزانية: {budget}
+مدة التنفيذ: {duration}
+تاريخ النشر: {publish_date}
+صاحب العمل: {client_name}
+الوسوم: {tags}
+حالة المشروع: {project_status}
+
 تفاصيل المشروع:
 {description}
     
