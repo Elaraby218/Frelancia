@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
   loadStats();
   loadTrackedProjects();
+  loadProposalTemplate();
   loadPrompts();
   setupTabs();
   setupEventListeners();
@@ -194,6 +195,28 @@ function untrackProject(id) {
 }
 
 // ==========================================
+// Proposal Template
+// ==========================================
+function loadProposalTemplate() {
+  chrome.storage.local.get(['proposalTemplate'], (data) => {
+    const template = data.proposalTemplate || '';
+    const textarea = document.getElementById('proposalTemplate');
+    if (textarea) textarea.value = template;
+  });
+}
+
+function saveProposalTemplate() {
+  const template = document.getElementById('proposalTemplate').value.trim();
+  chrome.storage.local.set({ proposalTemplate: template }, () => {
+    const msg = document.getElementById('proposalSaved');
+    if (msg) {
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+  });
+}
+
+// ==========================================
 // Event Listeners
 // ==========================================
 function setupEventListeners() {
@@ -236,6 +259,12 @@ function setupEventListeners() {
 
   // Debug button
   document.getElementById('debugBtn').addEventListener('click', debugConnection);
+
+  // Proposal template save
+  const saveProposalBtn = document.getElementById('saveProposalBtn');
+  if (saveProposalBtn) {
+    saveProposalBtn.addEventListener('click', saveProposalTemplate);
+  }
 
   // Prompts Management
   document.getElementById('addPromptBtn').addEventListener('click', () => openPromptForm());

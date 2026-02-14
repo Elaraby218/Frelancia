@@ -788,3 +788,11 @@ html[dir="rtl"] input:checked+.slider:before {
 .actions-row .btn {
   flex: 1;
 }
+
+.form-group .help-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+  opacity: 0.8;
+}

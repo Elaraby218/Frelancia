@@ -579,10 +579,14 @@ function showNotification(jobs) {
     title: title,
     message: message,
     priority: 2,
-    requireInteraction: true
+    requireInteraction: true,
+    buttons: [
+      { title: 'قدّم الآن' },
+      { title: 'فتح المشروع' }
+    ]
   }, (notificationId) => {
-    // Store job URL for click handler
-    chrome.storage.local.set({ [`notification_${notificationId}`]: job.url });
+    // Store job data for both click and button handlers
+    chrome.storage.local.set({ [`notification_${notificationId}`]: job });
   });
 }
 
@@ -599,16 +603,64 @@ function showTrackedNotification(project, changeMsg) {
   });
 }
 
-// Handle notification click
+// Handle notification body click (default opens project)
 chrome.notifications.onClicked.addListener((notificationId) => {
   chrome.storage.local.get([`notification_${notificationId}`], (data) => {
-    const url = data[`notification_${notificationId}`];
-    if (url) {
-      chrome.tabs.create({ url: url });
+    const job = data[`notification_${notificationId}`];
+    if (job) {
+      chrome.tabs.create({ url: job.url });
       chrome.storage.local.remove([`notification_${notificationId}`]);
     }
   });
 });
+
+// Handle notification buttons click
+chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) => {
+  chrome.storage.local.get([`notification_${notificationId}`], (data) => {
+    const job = data[`notification_${notificationId}`];
+    if (!job) return;
+
+    if (buttonIndex === 0) { // "قدّم الآن" (Apply Now)
+      console.log(`Apply Now clicked for job ${job.id}`);
+      
+      // Get all necessary data from storage
+      chrome.storage.local.get(['proposalTemplate'], (settingsData) => {
+        // Prepare autofill data
+        const minBudget = parseMinBudgetValue(job.budget);
+        const durationDays = parseDurationDays(job.duration || "");
+        
+        const autofillData = {
+          projectId: job.id,
+          amount: minBudget,
+          duration: durationDays,
+          proposal: settingsData.proposalTemplate || '',
+          timestamp: Date.now()
+        };
+
+        // Save to storage and open with flag
+        chrome.storage.local.set({ 'mostaql_pending_autofill': autofillData }, () => {
+          const urlWithFlag = job.url + (job.url.includes('?') ? '&' : '?') + 'mostaql_autofill=true';
+          chrome.tabs.create({ url: urlWithFlag });
+        });
+      });
+    } else { // "فتح المشروع" (Open Project)
+      chrome.tabs.create({ url: job.url });
+    }
+    
+    chrome.storage.local.remove([`notification_${notificationId}`]);
+  });
+});
+
+function parseMinBudgetValue(budgetText) {
+  if (!budgetText) return 0;
+  // Extract all numbers (including decimals)
+  const matches = budgetText.replace(/,/g, '').match(/\d+(\.\d+)?/g);
+  if (!matches) return 0;
+  
+  // Return the MINIMUM value for autofill (user requested lowest offer)
+  const values = matches.map(m => parseFloat(m));
+  return Math.min(...values);
+}
 
 // Play notification sound
 async function playSound() {
