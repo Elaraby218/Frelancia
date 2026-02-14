@@ -248,6 +248,15 @@ function setupEventListeners() {
   // Check now button
   document.getElementById('checkNowBtn').addEventListener('click', checkNow);
 
+  // Open Dashboard button
+  const dashboardBtn = document.getElementById('open-dashboard-btn');
+  if (dashboardBtn) {
+    dashboardBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      chrome.tabs.create({ url: 'dashboard.html' });
+    });
+  }
+
   // Clear history button
   document.getElementById('clearHistoryBtn').addEventListener('click', clearHistory);
 

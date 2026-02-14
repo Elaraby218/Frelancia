@@ -108,26 +108,8 @@ function fillForm(amountInput, durationInput, data) {
     // Cleanup: Remove used autofill data
     chrome.storage.local.remove(['mostaql_pending_autofill']);
     
-    // UI feedback
-    showAutofillToast();
-
     // IMPORTANT: DO NOT add auto-submission logic here. 
     // The user explicitly requested that only the fields be filled.
-}
-
-function showAutofillToast() {
-    const toast = document.createElement('div');
-    toast.className = 'mostaql-autofill-toast';
-    toast.innerHTML = '<i class="fa fa-magic"></i> تم تعبئة ميزانية المشروع ومدة التنفيذ تلقائياً';
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.remove(), 500);
-        }, 4000);
-    }, 100);
 }
 
 function injectTrackButton() {
