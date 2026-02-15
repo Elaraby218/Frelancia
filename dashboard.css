@@ -595,3 +595,189 @@ input:checked+.slider:before {
     background: var(--primary);
     color: white;
 }
+
+/* About Us Styles */
+.about-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 32px;
+    margin-top: 24px;
+}
+
+.about-card {
+    background: var(--card);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    border: 1px solid var(--border);
+    transition: var(--transition);
+    box-shadow: var(--shadow-premium);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.about-card:hover {
+    transform: translateY(-8px);
+    border-color: var(--primary);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.profile-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+}
+
+.profile-avatar.elaraby {
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+}
+
+.profile-avatar.omar {
+    background: linear-gradient(135deg, #0061ff 0%, #00c6ff 100%);
+}
+
+.profile-info h3 {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-title);
+    margin-bottom: 4px;
+}
+
+.profile-social {
+    display: flex;
+    gap: 12px;
+}
+
+.social-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    transition: var(--transition);
+}
+
+.social-btn.linkedin {
+    background: #e0f2fe;
+    color: #0369a1;
+}
+
+.social-btn.linkedin:hover {
+    background: #0077b5;
+    color: white;
+}
+
+.social-btn.github {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.social-btn.github:hover {
+    background: #0f172a;
+    color: white;
+}
+
+.dashboard-footer {
+    margin-top: 80px;
+    padding: 40px 0;
+    text-align: center;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+}
+
+.footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.footer-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    direction: ltr;
+    /* Ensure English names stay in order */
+}
+
+.footer-link {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 800;
+    transition: var(--transition);
+}
+
+.footer-link:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+}
+
+.footer-sep {
+    color: var(--text-muted);
+}
+
+.footer-copy {
+    margin-right: 4px;
+}
+
+.footer-version {
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.6;
+}
+
+/* Mission Section Styles */
+.mission-section {
+    margin-top: 60px;
+    padding: 40px;
+    background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.mission-content {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.mission-icon {
+    font-size: 32px;
+    color: #ef4444;
+    margin-bottom: 20px;
+}
+
+.mission-content h3 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-title);
+    margin-bottom: 16px;
+}
+
+.mission-content p {
+    font-size: 16px;
+    color: var(--text-body);
+    line-height: 1.8;
+}
