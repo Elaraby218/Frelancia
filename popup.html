@@ -1,398 +1,63 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mostaql Job Notifier</title>
+  <title>Frelancia | منبه مستقل</title>
   <link rel="stylesheet" href="popup.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-
 <body>
-  <div class="container">
-    <!-- Header -->
+  <div class="minimal-container">
     <div class="header">
-      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <h1>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="header-icon">
-            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-          </svg>
-          منبه مشاريع مستقل
-        </h1>
-        <a href="#" id="open-dashboard-btn" style="color: white; font-size: 11px; text-decoration: none; background: rgba(255,255,255,0.2); padding: 4px 8px; border-radius: 4px;">
-          <i class="fa fa-external-link"></i> لوحة التحكم
-        </a>
+      <div class="logo-area">
+        <h1>Frelancia Pro</h1>
+        <p class="tagline">مساعدك الذكي على مستقل</p>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="notifications">التنبيهات</button>
-      <button class="tab-btn" data-tab="customization">تخصيص التنبيهات</button>
-      <button class="tab-btn" data-tab="proposal">نموذج العرض</button>
-      <button class="tab-btn" data-tab="prompts">الأوامر</button>
-      <button class="tab-btn" data-tab="settings">الإعدادات</button>
+    <div class="content-body">
+      <div class="stats-overview">
+        <div class="stat-box">
+          <span class="stat-num" id="todayCount">0</span>
+          <span class="stat-label">مشاريع اليوم</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-box">
+          <span class="stat-num" id="totalSeen">0</span>
+          <span class="stat-label">إجمالي الرصد</span>
+        </div>
+      </div>
+
+      <div class="status-indicator">
+        <span class="dot active"></span>
+        <span id="lastCheck">جاري التحميل...</span>
+      </div>
+
+      <div class="main-actions">
+        <button id="open-dashboard-btn" class="btn primary">
+          <i class="fas fa-desktop"></i>
+          <span>فتح لوحة التحكم</span>
+        </button>
+        <button id="checkNowBtn" class="btn secondary">
+          <i class="fas fa-sync-alt"></i>
+          <span>فحص الآن</span>
+        </button>
+        
+        <button id="checkConnectionBtn" class="btn connection">
+          <i class="fas fa-plug"></i>
+          <span>فحص الاتصال بمستقل (Diagnostics)</span>
+        </button>
+      </div>
+
+      <div id="connectionReport" class="connection-report hidden"></div>
     </div>
 
-    <!-- Tab: Notifications -->
-    <div class="tab-content active" id="notifications">
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-          التصنيفات المراقبة
-        </h2>
-        <div class="toggle-item">
-          <span>تطوير البرمجيات</span>
-          <label class="switch">
-            <input type="checkbox" id="development" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="toggle-item">
-          <span>الذكاء الاصطناعي</span>
-          <label class="switch">
-            <input type="checkbox" id="ai" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="toggle-item">
-          <span>جميع المشاريع</span>
-          <label class="switch">
-            <input type="checkbox" id="all">
-            <span class="slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path
-              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-            </path>
-          </svg>
-          خيارات التنبيه
-        </h2>
-        <div class="toggle-item">
-          <span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="vertical-align: middle">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-            </svg>
-            الصوت
-          </span>
-          <label class="switch">
-            <input type="checkbox" id="sound" checked>
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div class="select-item">
-          <span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              style="vertical-align: middle">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-            الفحص كل
-          </span>
-          <select id="interval">
-            <option value="1">دقيقة</option>
-            <option value="2">دقيقتين</option>
-            <option value="5">5 دقائق</option>
-            <option value="10">10 دقائق</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <line x1="18" y1="20" x2="18" y2="10"></line>
-            <line x1="12" y1="20" x2="12" y2="4"></line>
-            <line x1="6" y1="20" x2="6" y2="14"></line>
-          </svg>
-          الإحصائيات
-        </h2>
-        <div class="stat-item">
-          <span>آخر فحص:</span>
-          <span id="lastCheck">-</span>
-        </div>
-        <div class="stat-item">
-          <span>مشاريع جديدة اليوم:</span>
-          <span id="todayCount">0</span>
-        </div>
-        <div class="stat-item">
-          <span>إجمالي المشاريع المسجلة:</span>
-          <span id="totalSeen">0</span>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-          المشاريع المراقبة
-        </h2>
-        <div id="trackedProjectsList" class="tracked-list">
-          <p class="empty-msg">لا توجد مشاريع مراقبة حالياً</p>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"></path>
-            <line x1="16" y1="8" x2="2" y2="22"></line>
-            <line x1="17.5" y1="15" x2="9" y2="15"></line>
-          </svg>
-          اختبار
-        </h2>
-        <div class="test-buttons">
-          <button id="testNotificationBtn" class="btn secondary">تجربة الإشعار</button>
-          <button id="testSoundBtn" class="btn secondary">تجربة الصوت</button>
-        </div>
-        <div id="testStatus" class="test-status hidden"></div>
-      </div>
-
-      <div class="actions">
-        <button id="checkNowBtn" class="btn primary">فحص الآن</button>
-        <button id="clearHistoryBtn" class="btn danger">مسح السجل</button>
-      </div>
-
-      <div id="checkResult" class="result-message hidden"></div>
-    </div>
-
-    <!-- Tab: Customization -->
-    <div class="tab-content" id="customization">
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
-          </svg>
-          فلترة ذكية (Smart Filters)
-        </h2>
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label>كلمات البحث (تضمين):</label>
-          <input type="text" id="keywordsInclude" placeholder="React, Node, تصميم..."
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text">الكلمات التي يجب أن تتوفر في عنوان أو وصف المشروع ليظهر لك تنبيه.</p>
-        </div>
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label>كلمات مستبعدة:</label>
-          <input type="text" id="keywordsExclude" placeholder="وردبريس, WordPress..."
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text">سيتم تجاهل أي مشروع يحتوي على هذه الكلمات في عنوانه أو وصفه.</p>
-        </div>
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label>أدنى ميزانية ($):</label>
-          <input type="number" id="minBudget" placeholder="مثلاً: 50"
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text">سيتم تجاهل المشاريع التي ميزانيتها أقل من هذا المبلغ.</p>
-        </div>
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label>أدنى معدل توظيف للعميل (%):</label>
-          <input type="number" id="minHiringRate" placeholder="مثلاً: 80"
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text">الحد الأدنى لنسبة التوظيف لدى صاحب المشروع (مثلاً 80%).</p>
-        </div>
-        <div class="form-group" style="margin-bottom: 15px;">
-          <label>أقصى مدة تنفيذ (يوم):</label>
-          <input type="number" id="maxDuration" placeholder="مثلاً: 7"
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text">أقصى مدة تنفيذ مقبولة للمشروع (بالأيام).</p>
-        </div>
-        <div class="form-group">
-          <label>أدنى عمر لحساب العميل (يوم):</label>
-          <input type="number" id="minClientAge" placeholder="مثلاً: 30"
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text">الحد الأدنى لعمر حساب العميل بالأيام (لتجنب الحسابات الجديدة).</p>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <path d="M22 2L2 8.5L11 13L19 6L12 14L16 22L22 2Z"></path>
-          </svg>
-          تنبيهات Telegram
-        </h2>
-        <div class="form-group" style="margin-bottom: 10px;">
-          <label>Bot Token:</label>
-          <input type="text" id="telegramToken" placeholder="123456789:ABCDE..."
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; direction: ltr; text-align: left;">
-        </div>
-        <div class="form-group" style="margin-bottom: 5px;">
-          <label>Chat ID:</label>
-          <input type="text" id="telegramChatId" placeholder="123456789"
-            style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; direction: ltr; text-align: left;">
-        </div>
-        <p class="help-text" style="font-size: 0.8em; color: #666;">
-          استخدم <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a> لمعرفة Chat ID الخاص بك.
-        </p>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          ساعات الهدوء (Quiet Hours)
-        </h2>
-        <div class="toggle-item">
-          <span>تفعيل ساعات الهدوء</span>
-          <label class="switch">
-            <input type="checkbox" id="quietHoursEnabled">
-            <span class="slider"></span>
-          </label>
-        </div>
-        <div id="quietHoursFields" class="form-group-row hidden" style="display: flex; gap: 10px; margin-top: 10px;">
-          <div style="flex: 1;">
-            <label style="font-size: 0.8em; display: block; margin-bottom: 2px;">من:</label>
-            <input type="time" id="quietHoursStart" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
-          </div>
-          <div style="flex: 1;">
-            <label style="font-size: 0.8em; display: block; margin-bottom: 2px;">إلى:</label>
-            <input type="time" id="quietHoursEnd" style="width: 100%; padding: 6px; border-radius: 4px; border: 1px solid #ddd;">
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab: Proposal Template -->
-    <div class="tab-content" id="proposal">
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="16" y1="13" x2="8" y2="13"></line>
-            <line x1="16" y1="17" x2="8" y2="17"></line>
-            <polyline points="10 9 9 9 8 9"></polyline>
-          </svg>
-          نموذج العرض الافتراضي
-        </h2>
-        <div class="form-group">
-          <label>نص العرض (سيتم تعبئته تلقائياً):</label>
-          <textarea id="proposalTemplate" rows="12" placeholder="اكتب عرضك الافتراضي هنا..."
-            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; resize: vertical; margin-top: 5px;"></textarea>
-          <p class="help-text">هذا النص سيتم وضعه في صندوق "تفاصيل العرض" عند النقر على "قدّم الآن" في الإشعارات.</p>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="saveProposalBtn" class="btn primary full-width">حفظ النموذج</button>
-      </div>
-      <div id="proposalSaved" class="success-message hidden">تم حفظ النموذج بنجاح</div>
-    </div>
-
-    <!-- Tab: Prompts -->
-    <div class="tab-content" id="prompts">
-      <div class="actions" style="margin-bottom: 15px;">
-        <button id="addPromptBtn" class="btn primary full-width">إضافة أمر جديد</button>
-      </div>
-
-      <div id="promptsList" class="prompts-list">
-        <!-- Prompts will be loaded here -->
-      </div>
-
-      <div id="promptForm" class="modal hidden">
-        <div class="modal-content">
-          <h3>إضافة/تعديل أمر</h3>
-          <input type="hidden" id="promptId">
-          <div class="form-group">
-            <label>العنوان</label>
-            <input type="text" id="promptTitle" placeholder="مثال: تقديم عرض برمجة">
-          </div>
-          <div class="form-group">
-            <label>نص الأمر</label>
-            <textarea id="promptContent" rows="6" placeholder="اكتب الأمر هنا..."></textarea>
-          </div>
-          <div class="modal-actions">
-            <button id="savePromptBtn" class="btn primary">حفظ</button>
-            <button id="cancelPromptBtn" class="btn secondary">إلغاء</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>إدارة الأوامر</h2>
-        <div class="actions-row">
-          <button id="exportPromptsBtn" class="btn secondary">تصدير الأوامر</button>
-          <button id="importPromptsBtn" class="btn secondary">استيراد الأوامر</button>
-          <input type="file" id="importPromptsInput" accept=".json" class="hidden">
-        </div>
-      </div>
-    </div>
-
-    <!-- Tab: Settings -->
-    <div class="tab-content" id="settings">
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <path
-              d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
-            </path>
-          </svg>
-          رابط شات الذكاء الاصطناعي
-        </h2>
-        <div class="form-group" style="margin-bottom: 10px;">
-          <label style="display: block; margin-bottom: 5px;">الرابط الافتراضي:</label>
-          <input type="text" id="aiChatUrl" placeholder="https://chatgpt.com/"
-            style="width: 100%; padding: 8px; direction: ltr; text-align: left; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;">
-          <p class="help-text" style="font-size: 0.8em; color: #666; margin-top: 5px;">
-            يمكنك وضع رابط مشروعك الخاص (Project URL) هنا ليتم فتح الشات عليه مباشرة.
-          </p>
-        </div>
-      </div>
-
-      <div class="section">
-        <h2>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            class="section-icon">
-            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-          </svg>
-          تصحيح الأخطاء
-        </h2>
-        <button id="debugBtn" class="btn secondary full-width">فحص الاتصال بمستقل</button>
-        <div id="debugResult" class="debug-result hidden"></div>
-      </div>
-
-      <div class="actions">
-        <button id="saveSettingsBtn" class="btn primary full-width">حفظ الإعدادات</button>
-      </div>
-
-      <div id="settingsSaved" class="success-message hidden">تم حفظ الإعدادات بنجاح</div>
-    </div>
-
-    <!-- Footer -->
     <div class="footer">
-      <a href="https://mostaql.com/projects" target="_blank">فتح مستقل</a>
+      <a href="https://mostaql.com/projects" target="_blank">زيارة موقع مستقل الرسمي</a>
     </div>
   </div>
 
   <script src="popup.js"></script>
 </body>
-
 </html>
