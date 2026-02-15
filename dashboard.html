@@ -1,320 +1,307 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Frelancia Dashboard | لوحة تحكم مستقل</title>
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="icons/icon48.png">
-    <!-- Fonts: Cairo & FontAwesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <title>Frelancia Pro | لوحة التحكم</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <img src="icons/icon128.png" alt="Logo" class="logo">
-                <h1>Frelancia Pro</h1>
+            <div class="logo-section">
+                <img src="icons/icon128.png" alt="Logo" class="logo-img">
+                <div class="logo-text">
+                    <h1>Frelancia</h1>
+                    <span>مساعد مستقل الذكي</span>
+                </div>
             </div>
+
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-tab="overview">
-                    <i class="fa fa-dashboard"></i>
-                    <span>نظرة عامة</span>
+                    <i class="fas fa-home"></i>
+                    <span>النظرة العامة</span>
                 </button>
                 <button class="nav-item" data-tab="filters">
-                    <i class="fa fa-filter"></i>
-                    <span>فلاتر المشاريع</span>
+                    <i class="fas fa-filter"></i>
+                    <span>الفلاتر الذكية</span>
                 </button>
                 <button class="nav-item" data-tab="prompts">
-                    <i class="fa fa-terminal"></i>
-                    <span>أوامر الذكاء الاصطناعي</span>
+                    <i class="fas fa-terminal"></i>
+                    <span>أوامر AI</span>
                 </button>
-                <button class="nav-item" data-tab="proposal">
-                    <i class="fa fa-file-text-o"></i>
-                    <span>قوالب العروض</span>
+                <button class="nav-item" data-tab="proposals">
+                    <i class="fas fa-file-contract"></i>
+                    <span>نماذج العروض</span>
                 </button>
-                <button class="nav-item" data-tab="notifications">
-                    <i class="fa fa-bell"></i>
-                    <span>التنبيهات و Telegram</span>
+                <button class="nav-item" data-tab="telegram">
+                    <i class="fab fa-telegram-plane"></i>
+                    <span>إشعارات تليجرام</span>
                 </button>
-                <button class="nav-item" data-tab="advanced">
-                    <i class="fa fa-cog"></i>
-                    <span>إعدادات متقدمة</span>
+                <button class="nav-item" data-tab="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>الإعدادات المتقدمة</span>
                 </button>
             </nav>
-            <div class="sidebar-footer">
-                <p>الإصدار 3.0</p>
-                <button id="check-now-btn" class="btn-check-now">
-                    <i class="fa fa-refresh"></i> فحص المشاريع الآن
-                </button>
+
+            <div style="margin-top: auto; padding-top: 20px;">
+                <div class="toggle-row" style="background: rgba(255,255,255,0.4);">
+                    <span style="font-size: 13px;">حالة المراقبة</span>
+                    <label class="switch">
+                        <input type="checkbox" id="systemToggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             </div>
         </aside>
 
-        <!-- Main Content -->
+        <!-- Main Content Area -->
         <main class="main-content">
-            <header class="content-header">
-                <h2 id="tab-title">نظرة عامة</h2>
-                <div class="header-actions">
-                    <span id="last-check" class="status-badge">آخر فحص: جاري التحميل...</span>
-                </div>
-            </header>
-
-            <!-- Tab 1: Overview -->
+            
+            <!-- Overview Tab -->
             <div class="tab-container" id="overview-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>مرحباً بك، شريك النجاح</h2>
+                        <p>إليك ملخص لنشاط الملحق وآخر المشاريع المرصودة.</p>
+                    </div>
+                </div>
+
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <i class="fa fa-eye"></i>
+                        <div class="stat-icon blue">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
                         <div class="stat-info">
-                            <span class="stat-label">مشاريع اليوم</span>
-                            <span id="stat-today" class="stat-value">0</span>
+                            <span class="value" id="stat-today">0</span>
+                            <span class="label">مشاريع اليوم</span>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fa fa-bookmark"></i>
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
                         <div class="stat-info">
-                            <span class="stat-label">مشاريع مراقبة</span>
-                            <span id="stat-tracked" class="stat-value">0</span>
+                            <span class="value" id="stat-total">0</span>
+                            <span class="label">إجمالي المرصود</span>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fa fa-list-alt"></i>
+                        <div class="stat-icon purple">
+                            <i class="fas fa-clock"></i>
+                        </div>
                         <div class="stat-info">
-                            <span class="stat-label">إجمالي ما تم رصده</span>
-                            <span id="stat-total" class="stat-value">0</span>
+                            <span class="value" id="stat-last-time">-</span>
+                            <span class="label">آخر فحص</span>
                         </div>
                     </div>
                 </div>
 
-                <section class="recent-projects">
-                    <h3>المشاريع المراقبة حالياً</h3>
-                    <div id="tracked-list" class="project-list">
-                        <p class="empty-state">لا يوجد مشاريع مراقبة حالياً</p>
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-history"></i>
+                        <h3>آخر المشاريع الملتقطة</h3>
                     </div>
-                </section>
+                    <div id="recentProjectsList" class="recent-list">
+                        <!-- Projects will be loaded here -->
+                        <p class="help-text" style="text-align: center; padding: 40px;">سيتم عرض آخر المشاريع المرصودة هنا بمجرد توفرها.</p>
+                    </div>
+                </div>
             </div>
 
-            <!-- Tab 2: Project Filters -->
+            <!-- Filters Tab -->
             <div class="tab-container hidden" id="filters-tab">
-                <div class="settings-grid">
-                    <div class="settings-card">
-                        <h3>التصنيفات المراقبة</h3>
-                        <p class="section-desc">اختر المجالات التي ترغب في استقبال تنبيهات عنها.</p>
-                        <div class="toggle-group-grid">
-                            <label class="toggle">
-                                <input type="checkbox" id="category-development">
-                                <span class="slider"></span>
-                                تطوير البرمجيات
-                            </label>
-                            <label class="toggle">
-                                <input type="checkbox" id="category-ai">
-                                <span class="slider"></span>
-                                الذكاء الاصطناعي
-                            </label>
-                            <label class="toggle">
-                                <input type="checkbox" id="category-all">
-                                <span class="slider"></span>
-                                جميع التصنيفات الأخرى
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3>فلترة الكلمات المفتاحية</h3>
-                        <div class="form-group">
-                            <label>كلمات يجب توفرها (Include)</label>
-                            <p class="help-text">سيتم إشعارك فقط إذا احتوى المشروع على أحد هذه الكلمات (افصل بفاصلة).</p>
-                            <input type="text" id="keywords-include" placeholder="مثال: python, scraping, bot">
-                        </div>
-                        <div class="form-group">
-                            <label>كلمات مستبعدة (Exclude)</label>
-                            <p class="help-text">لن يتم إشعارك بأي مشروع يحتوي على أي من هذه الكلمات.</p>
-                            <input type="text" id="keywords-exclude" placeholder="مثال: wordpress, design">
-                        </div>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3>ميزانية ومدة المشروع</h3>
-                        <div class="form-group">
-                            <label>الحد الأدنى للميزانية ($)</label>
-                            <p class="help-text">تجاهل المشاريع التي ميزانيتها أقل من هذا الرقم.</p>
-                            <input type="number" id="min-budget" min="0">
-                        </div>
-                        <div class="form-group">
-                            <label>الحد الأقصى للمدة (أيام)</label>
-                            <p class="help-text">تجاهل المشاريع التي تطلب وقت تنفيذ أطول من المحدد.</p>
-                            <input type="number" id="max-duration" min="0">
-                        </div>
-                    </div>
-
-                    <div class="settings-card">
-                        <h3>جودة العميل</h3>
-                        <div class="form-group">
-                            <label>الحد الأدنى لمعدل التوظيف (%)</label>
-                            <p class="help-text">تصفية العملاء الذين لا يوظفون المستقلين بشكل متكرر.</p>
-                            <input type="number" id="min-hiring-rate" min="0" max="100">
-                        </div>
-                        <div class="form-group">
-                            <label>عمر حساب العميل (بالأيام)</label>
-                            <p class="help-text">تجاهل المشاريع من الحسابات الجديدة التي لم يمضِ عليها هذه المدة.</p>
-                            <input type="number" id="min-client-age" min="0">
-                        </div>
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>الفلاتر الذكية</h2>
+                        <p>خصص نوعية المشاريع التي تريد الحصول على تنبيهات لها.</p>
                     </div>
                 </div>
-                <div class="form-actions sticky">
-                    <button id="save-filters-btn" class="btn-primary">حفظ إعدادات الفلترة</button>
-                    <span id="filters-status" class="save-status hidden">تم الحفظ بنجاح!</span>
+
+                <div class="settings-grid">
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-search"></i>
+                            <h3>الكلمات المفتاحية</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>كلمات يجب توفرها (تضمين)</label>
+                            <input type="text" id="keywordsInclude" class="form-control" placeholder="React, Node, تصميم...">
+                            <p class="help-text">افصل بين الكلمات بفاصلة. سيتم إخطارك فقط إذا احتوى المشروع على أحدها.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>كلمات مستبعدة</label>
+                            <input type="text" id="keywordsExclude" class="form-control" placeholder="Wordpress, PHP...">
+                            <p class="help-text">سيتم تجاهل أي مشروع يحتوي على هذه الكلمات تماماً.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-dollar-sign"></i>
+                            <h3>معايير المشروع</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>أدنى ميزانية ($)</label>
+                            <input type="number" id="minBudget" class="form-control" placeholder="مثلاً: 50">
+                        </div>
+                        <div class="form-group">
+                            <label>أدنى نسبة توظيف للعميل (%)</label>
+                            <input type="number" id="minHiringRate" class="form-control" placeholder="مثلاً: 70">
+                        </div>
+                        <div class="form-group">
+                            <label>أقصى مدة تنفيذ (يوم)</label>
+                            <input type="number" id="maxDuration" class="form-control" placeholder="مثلاً: 14">
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tab 3: Prompts -->
+            <!-- AI Prompts Tab -->
             <div class="tab-container hidden" id="prompts-tab">
-                <div class="section-header">
-                    <div class="header-main-info">
-                        <h3>قوالب الأوامر (AI Prompts)</h3>
-                        <p class="description">قم بإعداد الأوامر التي تريد إرسالها لـ ChatGPT. سيتم استبدال المتغيرات تلقائياً ببيانات المشروع.</p>
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>أوامر الذكاء الاصطناعي</h2>
+                        <p>قم بإدارة الأوامر (Prompts) التي تستخدمها لتوليد العروض.</p>
                     </div>
-                    <button id="add-prompt-btn" class="btn-primary">
-                        <i class="fa fa-plus"></i> إضافة أمر جديد
+                    <button id="addPromptBtn" class="btn-primary">
+                        <i class="fas fa-plus"></i> إضافة أمر جديد
                     </button>
                 </div>
-                <div id="prompts-list" class="prompts-grid">
-                    <!-- Prompts dynamic -->
+
+                <div id="promptsList" class="settings-grid">
+                    <!-- Prompts will be loaded here -->
                 </div>
             </div>
 
-            <!-- Tab 4: Proposal -->
-            <div class="tab-container hidden" id="proposal-tab">
-                <div class="settings-card full-width">
-                    <h3>نموذج العرض الافتراضي</h3>
-                    <p class="section-desc">هذا النص سيتم تعبئته في خانة "تفاصيل العرض" بموقع مستقل تلقائياً.</p>
+            <!-- Proposals Tab -->
+            <div class="tab-container hidden" id="proposals-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>نماذج العروض</h2>
+                        <p>حدد الرصيد الافتراضي الذي يتم تعبئته تلقائياً عند فتح المشروع.</p>
+                    </div>
+                </div>
+
+                <div class="settings-section">
                     <div class="form-group">
-                        <textarea id="proposal-template" placeholder="اكتب عرضك هنا..." rows="12"></textarea>
-                    </div>
-                    <div class="form-actions">
-                        <button id="save-proposal-btn" class="btn-primary">حفظ قالب العرض</button>
-                        <span id="proposal-status" class="save-status hidden">تم الحفظ!</span>
+                        <label>نص العرض الافتراضي</label>
+                        <textarea id="proposalTemplate" rows="15" class="form-control" placeholder="اكتب عرضك هنا..."></textarea>
+                        <p class="help-text">سيتم وضع هذا النص تلقائياً في خانة تفاصيل العرض في موقع مستقل.</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Tab 5: Notifications & Telegram -->
-            <div class="tab-container hidden" id="notifications-tab">
-                <div class="settings-grid">
-                    <div class="settings-card">
-                        <h3>تنبيهات المتصفح</h3>
-                        <div class="toggle-group">
-                            <label class="toggle">
-                                <input type="checkbox" id="sound-toggle">
-                                <span class="slider"></span>
-                                تفعيل صوت التنبيه الجديد
-                            </label>
-                        </div>
-                        <div class="form-actions" style="margin-top: 20px;">
-                            <button id="test-notif-btn" class="btn-secondary">إرسال إشعار تجريبي</button>
-                            <button id="test-sound-btn" class="btn-secondary">تجربة الصوت</button>
-                        </div>
+            <!-- Telegram Tab -->
+            <div class="tab-container hidden" id="telegram-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>إشعارات تليجرام</h2>
+                        <p>اربط الملحق بحسابك في تليجرام لتصلك التنبيهات أينما كنت.</p>
                     </div>
+                </div>
 
-                    <div class="settings-card">
-                        <h3>ربط Telegram</h3>
-                        <p class="section-desc">احصل على إشعارات المشاريع مباشرة على هاتفك عبر بوت تليجرام.</p>
-                        <div class="form-group">
-                            <label>Bot Token</label>
-                            <input type="text" id="telegram-token" placeholder="أدخل التوكن الخاص بالبوت">
-                        </div>
-                        <div class="form-group">
-                            <label>Chat ID</label>
-                            <input type="text" id="telegram-chatid" placeholder="أدخل معرف الشات">
-                        </div>
-                        <div class="form-actions">
-                            <button id="test-telegram-btn" class="btn-secondary">اختبار الإرسال</button>
-                        </div>
+                <div class="settings-section" style="max-width: 600px;">
+                    <div class="form-group">
+                        <label>Bot Token</label>
+                        <input type="text" id="telegramToken" class="form-control" placeholder="123456789:ABCDEF..." dir="ltr">
                     </div>
+                    <div class="form-group">
+                        <label>Chat ID</label>
+                        <input type="text" id="telegramChatId" class="form-control" placeholder="123456789" dir="ltr">
+                    </div>
+                    <div class="toggle-row">
+                        <span>تفعيل إرسال الإشعارات</span>
+                        <label class="switch">
+                            <input type="checkbox" id="telegramEnabled">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <p class="help-text">
+                        استخدم <a href="https://t.me/userinfobot" target="_blank" style="color: var(--primary);">@userinfobot</a> للحصول على معرف هويتك.
+                    </p>
                 </div>
             </div>
 
-            <!-- Tab 6: Advanced -->
-            <div class="tab-container hidden" id="advanced-tab">
+            <!-- Advanced Settings Tab -->
+            <div class="tab-container hidden" id="settings-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>الإعدادات المتقدمة</h2>
+                        <p>إعدادات النظام والتحكم المتقدم.</p>
+                    </div>
+                </div>
+
                 <div class="settings-grid">
-                    <div class="settings-card">
-                        <h3>إعدادات النظام</h3>
-                        <div class="form-group">
-                            <label>فترة تحديث المشاريع (بالدقائق)</label>
-                            <p class="help-text">كم مرة يقوم الملقح بفحص المشاريع الجديدة (يفضل 1-2 دقيقة).</p>
-                            <input type="number" id="check-interval" min="1" max="60">
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-robot"></i>
+                            <h3>رابط الذكاء الاصطناعي</h3>
                         </div>
                         <div class="form-group">
-                            <label>رابط محادثة الذكاء الاصطناعي</label>
-                            <p class="help-text">الرابط الذي سيفتح عند ضغط زر "استشارة AI".</p>
-                            <input type="text" id="ai-chat-url" placeholder="https://chatgpt.com/">
+                            <label>رابط الشات المفضل</label>
+                            <input type="text" id="aiChatUrl" class="form-control" placeholder="https://chatgpt.com/" dir="ltr">
+                            <p class="help-text">يمكنك استخدام رابط مخصص أو رابط مشروع ChatGPT بعينه.</p>
                         </div>
                     </div>
 
-                    <div class="settings-card">
-                        <h3>أوقات الهدوء (Quiet Hours)</h3>
-                        <p class="section-desc">تعطيل التنبيهات في أوقات محددة (مثل وقت النوم).</p>
-                        <div class="toggle-group">
-                            <label class="toggle">
-                                <input type="checkbox" id="quiet-hours-toggle">
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-bell"></i>
+                            <h3>ساعات الهدوء</h3>
+                        </div>
+                        <div class="toggle-row">
+                            <span>تفعيل ساعات الهدوء</span>
+                            <label class="switch">
+                                <input type="checkbox" id="quietHoursEnabled">
                                 <span class="slider"></span>
-                                تفعيل أوقات الهدوء
                             </label>
                         </div>
-                        <div id="quiet-hours-fields" class="hidden">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>من الساعة</label>
-                                    <input type="time" id="quiet-hours-start">
-                                </div>
-                                <div class="form-group">
-                                    <label>إلى الساعة</label>
-                                    <input type="time" id="quiet-hours-end">
-                                </div>
+                        <div class="form-group" style="display: flex; gap: 20px;">
+                            <div style="flex: 1;">
+                                <label>من</label>
+                                <input type="time" id="quietHoursStart" class="form-control">
+                            </div>
+                            <div style="flex: 1;">
+                                <label>إلى</label>
+                                <input type="time" id="quietHoursEnd" class="form-control">
                             </div>
                         </div>
                     </div>
-
-                    <div class="settings-card danger-zone">
-                        <h3>منطقة الخطر</h3>
-                        <p class="section-desc">إجراءات لا يمكن التراجع عنها.</p>
-                        <button id="clear-history-btn" class="btn-danger">مسح كافة المشاريع والإحصائيات</button>
-                        <button id="reset-settings-btn" class="btn-danger-outline">إعادة ضبط الإعدادات للمصنع</button>
-                    </div>
                 </div>
+            </div>
+
+            <!-- Sticky Save Bar -->
+            <div class="sticky-footer">
+                <span id="saveStatus" style="font-size: 14px; font-weight: 700; color: var(--success); opacity: 0; transition: opacity 0.3s;">تم حفظ التغييرات بنجاح</span>
+                <button id="saveAllBtn" class="btn-primary">
+                    <i class="fas fa-save"></i> حفظ جميع الإعدادات
+                </button>
             </div>
         </main>
     </div>
 
-    <!-- Modal for editing prompts -->
-    <div id="prompt-modal" class="modal hidden">
-        <div class="modal-content">
-            <header class="modal-header">
-                <h3 id="modal-title">إضافة أمر جديد</h3>
-                <button class="close-modal">&times;</button>
-            </header>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>عنوان الأمر</label>
-                    <input type="text" id="modal-prompt-title" placeholder="مثال: كتابة عرض احترافي">
-                </div>
-                <div class="form-group">
-                    <label>النص (Prompt)</label>
-                    <p class="help-text">استخدم المتغيرات مثل {title}, {description}, {budget} ليتم تعويضها تلقائياً.</p>
-                    <textarea id="modal-prompt-content" rows="12"></textarea>
-                </div>
-                <!-- Variable Helper -->
-                <div class="variable-helper">
-                    <span>المتغيرات المتاحة:</span>
-                    <code>{title}</code> <code>{description}</code> <code>{budget}</code> <code>{duration}</code> <code>{tags}</code> <code>{hiring_rate}</code>
-                </div>
+    <!-- Modals -->
+    <div id="promptModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+        <div class="settings-section" style="width: 500px; margin-bottom: 0;">
+            <div class="section-header">
+                <h3 id="modalTitle">إضافة أمر جديد</h3>
             </div>
-            <footer class="modal-footer">
-                <button class="btn-secondary close-modal">إلغاء</button>
-                <button id="save-modal-prompt-btn" class="btn-primary">حفظ التغييرات</button>
-            </footer>
+            <input type="hidden" id="promptId">
+            <div class="form-group">
+                <label>عنوان الأمر</label>
+                <input type="text" id="promptTitle" class="form-control" placeholder="مثال: عرض برمجة Flutter">
+            </div>
+            <div class="form-group">
+                <label>نص الأمر</label>
+                <textarea id="promptContent" rows="8" class="form-control" placeholder="اكتب الأمر هنا..."></textarea>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <button id="closeModalBtn" class="nav-item" style="background: #f1f5f9; text-align: center; justify-content: center;">إلغاء</button>
+                <button id="confirmSavePrompt" class="btn-primary" style="flex: 1; justify-content: center;">حفظ الأمر</button>
+            </div>
         </div>
     </div>
 

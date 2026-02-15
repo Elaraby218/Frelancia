@@ -1,360 +1,309 @@
 // ==========================================
-// Frelancia - Enhanced Dashboard Script
+// Frelancia Pro - Dashboard Interactivity
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // UI Elements
+    // Initialize
+    loadData();
+    setupEventListeners();
+});
+
+// --- Tab Management ---
+function setupTabSwitching() {
     const navItems = document.querySelectorAll('.nav-item');
     const tabContainers = document.querySelectorAll('.tab-container');
-    const tabTitleText = document.getElementById('tab-title');
 
-    // Stats Elements
-    const statToday = document.getElementById('stat-today');
-    const statTracked = document.getElementById('stat-tracked');
-    const statTotal = document.getElementById('stat-total');
-    const lastCheckSpan = document.getElementById('last-check');
-
-    // Filter Inputs
-    const catDev = document.getElementById('category-development');
-    const catAi = document.getElementById('category-ai');
-    const catAll = document.getElementById('category-all');
-    const kwInclude = document.getElementById('keywords-include');
-    const kwExclude = document.getElementById('keywords-exclude');
-    const minBudget = document.getElementById('min-budget');
-    const maxDuration = document.getElementById('max-duration');
-    const minHiringRate = document.getElementById('min-hiring-rate');
-    const minClientAge = document.getElementById('min-client-age');
-
-    // Notification / Advanced Inputs
-    const soundToggle = document.getElementById('sound-toggle');
-    const tgToken = document.getElementById('telegram-token');
-    const tgChatId = document.getElementById('telegram-chatid');
-    const checkInterval = document.getElementById('check-interval');
-    const aiChatUrl = document.getElementById('ai-chat-url');
-    const qhToggle = document.getElementById('quiet-hours-toggle');
-    const qhStart = document.getElementById('quiet-hours-start');
-    const qhEnd = document.getElementById('quiet-hours-end');
-    const qhFields = document.getElementById('quiet-hours-fields');
-
-    // Proposal
-    const proposalTextarea = document.getElementById('proposal-template');
-
-    // Lists
-    const trackedList = document.getElementById('tracked-list');
-    const promptsList = document.getElementById('prompts-list');
-
-    // Modals
-    const promptModal = document.getElementById('prompt-modal');
-    const modalTitle = document.getElementById('modal-title');
-    const modalPromptTitle = document.getElementById('modal-prompt-title');
-    const modalPromptContent = document.getElementById('modal-prompt-content');
-    const saveModalPromptBtn = document.getElementById('save-modal-prompt-btn');
-
-    let currentEditingPromptId = null;
-
-    // --- Tab Management ---
     navItems.forEach(item => {
         item.addEventListener('click', () => {
-            const tab = item.dataset.tab;
-            
+            const tabId = item.dataset.tab;
+            if (!tabId) return;
+
+            // Update Active Nav
             navItems.forEach(i => i.classList.remove('active'));
             item.classList.add('active');
-            
-            tabContainers.forEach(c => c.classList.add('hidden'));
-            document.getElementById(`${tab}-tab`).classList.remove('hidden');
-            
-            tabTitleText.textContent = item.querySelector('span').textContent;
-        });
-    });
 
-    // --- Data Management ---
-
-    function loadAllData() {
-        chrome.storage.local.get(['settings', 'stats', 'trackedProjects', 'prompts', 'proposalTemplate', 'seenJobs'], (data) => {
-            // Stats
-            if (data.stats) {
-                statToday.textContent = data.stats.todayCount || 0;
-                lastCheckSpan.textContent = data.stats.lastCheck 
-                    ? `آخر فحص: ${new Date(data.stats.lastCheck).toLocaleTimeString('ar-EG')}`
-                    : 'آخر فحص: لم يتم الفحص بعد';
-            }
-            if (data.seenJobs) {
-                statTotal.textContent = data.seenJobs.length;
-            }
-
-            // Tracked Projects
-            renderTrackedProjects(data.trackedProjects || {});
-
-            // Prompts
-            renderPrompts(data.prompts || []);
-
-            // Proposal Template
-            proposalTextarea.value = data.proposalTemplate || '';
-
-            // Settings Mapping
-            const s = data.settings || {};
-            
-            // Filters
-            catDev.checked = s.development !== false;
-            catAi.checked = s.ai !== false;
-            catAll.checked = s.all === true;
-            kwInclude.value = s.keywordsInclude || '';
-            kwExclude.value = s.keywordsExclude || '';
-            minBudget.value = s.minBudget || '';
-            maxDuration.value = s.maxDuration || '';
-            minHiringRate.value = s.minHiringRate || '';
-            minClientAge.value = s.minClientAge || '';
-
-            // Notification / Telegram
-            soundToggle.checked = s.sound !== false;
-            tgToken.value = s.telegramToken || '';
-            tgChatId.value = s.telegramChatId || '';
-
-            // Advanced
-            checkInterval.value = s.interval || 1;
-            aiChatUrl.value = s.aiChatUrl || 'https://chatgpt.com/';
-            qhToggle.checked = s.quietHoursEnabled === true;
-            qhStart.value = s.quietHoursStart || '00:00';
-            qhEnd.value = s.quietHoursEnd || '07:00';
-            
-            qhFields.classList.toggle('hidden', !qhToggle.checked);
-        });
-    }
-
-    // --- Render Functions ---
-
-    function renderTrackedProjects(tracked) {
-        const projects = Object.values(tracked);
-        if (projects.length === 0) {
-            trackedList.innerHTML = '<p class="empty-state">لا يوجد مشاريع مراقبة حالياً</p>';
-            statTracked.textContent = 0;
-            return;
-        }
-
-        statTracked.textContent = projects.length;
-        trackedList.innerHTML = '';
-
-        projects.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'project-item';
-            div.style.padding = '18px 24px';
-            div.style.borderBottom = '1px solid #f0f0f0';
-            div.style.display = 'flex';
-            div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center';
-
-            div.innerHTML = `
-                <div>
-                    <h4 style="margin-bottom: 6px; font-weight: 700;"><a href="${p.url}" target="_blank" style="text-decoration: none; color: #2386c8;">${p.title}</a></h4>
-                    <span style="font-size: 13px; color: #999;">آخر تحديث ورصد: ${new Date(p.lastSeen).toLocaleString('ar-EG')}</span>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <a href="${p.url}" target="_blank" class="btn-icon" title="فتح المشروع"><i class="fa fa-external-link"></i></a>
-                    <button class="btn-icon delete" data-id="${p.id}" title="إلغاء المراقبة">
-                        <i class="fa fa-trash"></i>
-                    </button>
-                </div>
-            `;
-
-            div.querySelector('.delete').onclick = () => stopTracking(p.id);
-            trackedList.appendChild(div);
-        });
-    }
-
-    function renderPrompts(prompts) {
-        promptsList.innerHTML = '';
-        if (prompts.length === 0) {
-            promptsList.innerHTML = '<p class="empty-state">لا يوجد أوامر مضافة حالياً</p>';
-            return;
-        }
-
-        prompts.forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'prompt-card';
-            card.innerHTML = `
-                <div>
-                    <h4>${p.title}</h4>
-                    <p class="prompt-preview">${p.content}</p>
-                </div>
-                <div class="prompt-actions">
-                    <button class="btn-icon edit" title="تعديل"><i class="fa fa-edit"></i></button>
-                    <button class="btn-icon delete" title="حذف"><i class="fa fa-trash"></i></button>
-                </div>
-            `;
-
-            card.querySelector('.edit').onclick = () => openPromptModal(p);
-            card.querySelector('.delete').onclick = () => deletePrompt(p.id);
-            promptsList.appendChild(card);
-        });
-    }
-
-    // --- Action Handlers ---
-
-    function stopTracking(id) {
-        if (!confirm('هل متأكد من إلغاء مراقبة هذا المشروع؟')) return;
-        chrome.storage.local.get(['trackedProjects'], (data) => {
-            const tracked = data.trackedProjects || {};
-            delete tracked[id];
-            chrome.storage.local.set({ trackedProjects: tracked }, loadAllData);
-        });
-    }
-
-    function deletePrompt(id) {
-        if (!confirm('هل أنت متأكد من حذف هذا الأمر؟')) return;
-        chrome.storage.local.get(['prompts'], (data) => {
-            const prompts = data.prompts || [];
-            const filtered = prompts.filter(p => p.id !== id);
-            chrome.storage.local.set({ prompts: filtered }, loadAllData);
-        });
-    }
-
-    function openPromptModal(prompt = null) {
-        if (prompt) {
-            currentEditingPromptId = prompt.id;
-            modalTitle.textContent = 'تعديل الأمر';
-            modalPromptTitle.value = prompt.title;
-            modalPromptContent.value = prompt.content;
-        } else {
-            currentEditingPromptId = null;
-            modalTitle.textContent = 'إضافة أمر جديد';
-            modalPromptTitle.value = '';
-            modalPromptContent.value = '';
-        }
-        promptModal.classList.remove('hidden');
-    }
-
-    // --- Save Logic ---
-
-    function getFormSettings() {
-        return {
-            development: catDev.checked,
-            ai: catAi.checked,
-            all: catAll.checked,
-            keywordsInclude: kwInclude.value.trim(),
-            keywordsExclude: kwExclude.value.trim(),
-            minBudget: parseInt(minBudget.value) || 0,
-            maxDuration: parseInt(maxDuration.value) || 0,
-            minHiringRate: parseInt(minHiringRate.value) || 0,
-            minClientAge: parseInt(minClientAge.value) || 0,
-            sound: soundToggle.checked,
-            telegramToken: tgToken.value.trim(),
-            telegramChatId: tgChatId.value.trim(),
-            interval: parseInt(checkInterval.value) || 1,
-            aiChatUrl: aiChatUrl.value.trim() || 'https://chatgpt.com/',
-            quietHoursEnabled: qhToggle.checked,
-            quietHoursStart: qhStart.value,
-            quietHoursEnd: qhEnd.value
-        };
-    }
-
-    async function saveSettings(btnId, statusId) {
-        const settings = getFormSettings();
-        const btn = document.getElementById(btnId);
-        const status = document.getElementById(statusId);
-
-        chrome.storage.local.set({ settings }, () => {
-            // Notify background to update alarm
-            chrome.runtime.sendMessage({ action: 'updateAlarm', interval: settings.interval });
-            
-            // Feedback
-            if (status) {
-                status.classList.remove('hidden');
-                setTimeout(() => status.classList.add('hidden'), 3000);
-            }
-            if (btn) flashButton(btn);
-        });
-    }
-
-    function flashButton(btn) {
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="fa fa-check"></i> تم الحفظ';
-        btn.classList.add('success-flash');
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.classList.remove('success-flash');
-        }, 2000);
-    }
-
-    // --- Event Listeners ---
-
-    // Save Filters
-    document.getElementById('save-filters-btn').onclick = () => saveSettings('save-filters-btn', 'filters-status');
-
-    // Save Proposal
-    document.getElementById('save-proposal-btn').onclick = () => {
-        chrome.storage.local.set({ proposalTemplate: proposalTextarea.value }, () => {
-            flashButton(document.getElementById('save-proposal-btn'));
-        });
-    };
-
-    // Auto-save on some fields for better UX
-    [soundToggle, qhToggle, catDev, catAi, catAll].forEach(el => {
-        el.onchange = () => {
-           if (el === qhToggle) qhFields.classList.toggle('hidden', !qhToggle.checked);
-           saveSettings(null, null);
-        };
-    });
-
-    // Modal Saving
-    saveModalPromptBtn.onclick = () => {
-        const title = modalPromptTitle.value.trim();
-        const content = modalPromptContent.value.trim();
-        if (!title || !content) return alert('يرجى كتابة العنوان والنص');
-
-        chrome.storage.local.get(['prompts'], (data) => {
-            let prompts = data.prompts || [];
-            if (currentEditingPromptId) {
-                prompts = prompts.map(p => p.id === currentEditingPromptId ? { ...p, title, content } : p);
-            } else {
-                prompts.push({ id: 'p_' + Date.now(), title, content });
-            }
-            chrome.storage.local.set({ prompts }, () => {
-                promptModal.classList.add('hidden');
-                loadAllData();
+            // Update Active Tab
+            tabContainers.forEach(container => {
+                container.classList.add('hidden');
+                if (container.id === `${tabId}-tab`) {
+                    container.classList.remove('hidden');
+                }
             });
         });
-    };
+    });
+}
 
-    // Tests
-    document.getElementById('test-notif-btn').onclick = () => chrome.runtime.sendMessage({ action: 'testNotification' });
-    document.getElementById('test-sound-btn').onclick = () => chrome.runtime.sendMessage({ action: 'testSound' });
-    document.getElementById('test-telegram-btn').onclick = () => {
-        const settings = getFormSettings();
-        chrome.storage.local.set({ settings }, () => {
-            chrome.runtime.sendMessage({ action: 'testTelegram' });
-        });
-    };
-
-    // Actions
-    document.getElementById('add-prompt-btn').onclick = () => openPromptModal();
-    document.querySelectorAll('.close-modal').forEach(btn => btn.onclick = () => promptModal.classList.add('hidden'));
-
-    document.getElementById('check-now-btn').onclick = () => {
-        const icon = document.querySelector('#check-now-btn i');
-        icon.classList.add('fa-spin');
-        chrome.runtime.sendMessage({ action: 'checkNow' }, () => {
-            setTimeout(() => {
-                icon.classList.remove('fa-spin');
-                loadAllData();
-            }, 1000);
-        });
-    };
-
-    document.getElementById('clear-history-btn').onclick = () => {
-        if (confirm('تنبيه: سيتم مسح كافة سجلات المشاريع. هل أنت متأكد؟')) {
-            chrome.runtime.sendMessage({ action: 'clearHistory' }, loadAllData);
+// --- Data Loading ---
+function loadData() {
+    chrome.storage.local.get(['settings', 'stats', 'prompts', 'proposalTemplate', 'seenJobs', 'recentJobs'], (data) => {
+        // High Level Stats
+        if (data.stats) {
+            const todayCount = parseInt(data.stats.todayCount);
+            document.getElementById('stat-today').textContent = isNaN(todayCount) ? 0 : todayCount;
+            
+            const lastTime = data.stats.lastCheck ? new Date(data.stats.lastCheck).toLocaleTimeString('ar-EG') : '-';
+            document.getElementById('stat-last-time').textContent = lastTime;
         }
-    };
-
-    document.getElementById('reset-settings-btn').onclick = () => {
-        if (confirm('هل تريد فعلاً إعادة كافة الإعدادات إلى وضعها الافتراضي؟')) {
-            chrome.storage.local.clear(() => window.location.reload());
+        
+        if (data.seenJobs) {
+            const totalSeen = Array.isArray(data.seenJobs) ? data.seenJobs.length : 0;
+            document.getElementById('stat-total').textContent = totalSeen;
         }
+        
+        // Render Project List using full objects
+        renderRecentProjects(data.recentJobs || []);
+
+        // Settings / Filters
+        const s = data.settings || {};
+        const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (el.type === 'checkbox') el.checked = val;
+                else el.value = val || '';
+            }
+        };
+
+        setVal('keywordsInclude', s.keywordsInclude);
+        setVal('keywordsExclude', s.keywordsExclude);
+        setVal('minBudget', s.minBudget);
+        setVal('minHiringRate', s.minHiringRate);
+        setVal('maxDuration', s.maxDuration);
+        setVal('telegramToken', s.telegramToken);
+        setVal('telegramChatId', s.telegramChatId);
+        setVal('telegramEnabled', s.telegramEnabled !== false);
+        setVal('aiChatUrl', s.aiChatUrl || 'https://chatgpt.com/');
+        setVal('quietHoursEnabled', s.quietHoursEnabled === true);
+        setVal('quietHoursStart', s.quietHoursStart);
+        setVal('quietHoursEnd', s.quietHoursEnd);
+        setVal('systemToggle', s.systemEnabled !== false);
+
+        // Proposals
+        document.getElementById('proposalTemplate').value = data.proposalTemplate || '';
+
+        // Prompts
+        renderPrompts(data.prompts || []);
+    });
+}
+
+// --- Render Functions ---
+function renderRecentProjects(jobs) {
+    const list = document.getElementById('recentProjectsList');
+    if (!list) return;
+
+    if (jobs.length === 0) {
+        list.innerHTML = '<p class="help-text" style="text-align: center; padding: 40px;">لا يوجد مشاريع مرصودة حالياً.</p>';
+        return;
+    }
+
+    // Strictly show the last 10 posted projects
+    const recent = jobs.slice(0, 10);
+    list.innerHTML = recent.map(job => {
+        const budget = job.budget || 'غير محدد';
+        const time = job.time || '';
+        const hiringRate = job.hiringRate || 'غير محدد';
+        const communications = job.communications || '0';
+        const description = job.description || 'لا يوجد وصف متاح لهذا المشروع حالياً.';
+        const status = job.status || 'مفتوح';
+        
+        let statusClass = 'status-open';
+        if (status.includes('تنفيذ') || status.includes('عمل')) statusClass = 'status-processing';
+        if (status.includes('مغلق') || status.includes('مكتمل')) statusClass = 'status-closed';
+
+        return `
+            <div class="project-item">
+                <div class="project-header">
+                    <a href="${job.url}" target="_blank" class="project-title">${job.title || 'بدون عنوان'}</a>
+                    <span class="status-badge ${statusClass}">${status}</span>
+                </div>
+                
+                <div class="project-footer">
+                    <div class="project-stats">
+                        <div class="stat-inline">
+                            <i class="fas fa-user-check"></i>
+                            <span>التوظيف: ${hiringRate}</span>
+                        </div>
+                        <div class="stat-inline">
+                            <i class="fas fa-comments"></i>
+                            <span>التواصلات: ${communications}</span>
+                        </div>
+                    </div>
+                    <a href="${job.url}" target="_blank" class="btn-view-project">
+                        <span>قدّم الآن</span>
+                        <i class="fas fa-chevron-left" style="margin-right: 8px; font-size: 10px;"></i>
+                    </a>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function renderPrompts(prompts) {
+    const list = document.getElementById('promptsList');
+    if (!list) return;
+
+    if (prompts.length === 0) {
+        list.innerHTML = '<p class="help-text" style="grid-column: 1/-1; text-align: center; padding: 40px;">لا يوجد أوامر مضافة حالياً.</p>';
+        return;
+    }
+
+    list.innerHTML = prompts.map((p, i) => `
+        <div class="prompt-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                <h4 style="font-weight: 800; font-size: 16px; color: var(--text-title);">${p.title}</h4>
+                <div style="display: flex; gap: 8px;">
+                    <button onclick="editPrompt(${i})" class="btn-icon" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="fas fa-edit"></i></button>
+                    <button onclick="deletePrompt(${i})" class="btn-icon" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+            <p style="font-size: 13px; color: var(--text-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.content}</p>
+        </div>
+    `).join('');
+}
+
+// --- Event Listeners ---
+function setupEventListeners() {
+    setupTabSwitching();
+
+    // Save All Button
+    const saveBtn = document.getElementById('saveAllBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', saveAllSettings);
+    }
+
+    // Modal Controls
+    const addBtn = document.getElementById('addPromptBtn');
+    if (addBtn) addBtn.addEventListener('click', () => openPromptModal());
+
+    const closeBtn = document.getElementById('closeModalBtn');
+    if (closeBtn) closeBtn.addEventListener('click', () => document.getElementById('promptModal').classList.add('hidden'));
+
+    const confirmSaveBtn = document.getElementById('confirmSavePrompt');
+    if (confirmSaveBtn) confirmSaveBtn.addEventListener('click', savePromptFromModal);
+
+    // Auto-save Status Toggle
+    const systemToggle = document.getElementById('systemToggle');
+    if (systemToggle) {
+        systemToggle.addEventListener('change', () => {
+            chrome.storage.local.get(['settings'], (data) => {
+                const s = data.settings || {};
+                s.systemEnabled = systemToggle.checked;
+                chrome.storage.local.set({ settings: s }, () => {
+                    showSaveStatus();
+                });
+            });
+        });
+    }
+}
+
+// --- Save Logic ---
+function saveAllSettings() {
+    const getVal = (id) => {
+        const el = document.getElementById(id);
+        return el ? (el.type === 'checkbox' ? el.checked : el.value) : null;
     };
 
-    // Listen for storage changes from other tabs (Popup or Mostaql)
-    chrome.storage.onChanged.addListener(() => loadAllData());
+    const settings = {
+        keywordsInclude: getVal('keywordsInclude'),
+        keywordsExclude: getVal('keywordsExclude'),
+        minBudget: parseInt(getVal('minBudget')) || 0,
+        minHiringRate: parseInt(getVal('minHiringRate')) || 0,
+        maxDuration: parseInt(getVal('maxDuration')) || 0,
+        telegramToken: getVal('telegramToken'),
+        telegramChatId: getVal('telegramChatId'),
+        telegramEnabled: getVal('telegramEnabled'),
+        aiChatUrl: getVal('aiChatUrl'),
+        quietHoursEnabled: getVal('quietHoursEnabled'),
+        quietHoursStart: getVal('quietHoursStart'),
+        quietHoursEnd: getVal('quietHoursEnd'),
+        systemEnabled: getVal('systemToggle')
+    };
 
-    // Initial load
-    loadAllData();
-});
+    const proposalTemplate = document.getElementById('proposalTemplate').value;
+
+    chrome.storage.local.set({ settings, proposalTemplate }, () => {
+        showSaveStatus();
+        // Update alarm in background
+        chrome.runtime.sendMessage({ action: 'updateAlarm', interval: settings.interval });
+    });
+}
+
+function showSaveStatus() {
+    const status = document.getElementById('saveStatus');
+    status.style.opacity = '1';
+    setTimeout(() => {
+        status.style.opacity = '0';
+    }, 3000);
+}
+
+// --- Prompt CRUD ---
+window.editPrompt = function(index) {
+    chrome.storage.local.get(['prompts'], (data) => {
+        const prompts = data.prompts || [];
+        const p = prompts[index];
+        if (p) openPromptModal(p, index);
+    });
+};
+
+window.deletePrompt = function(index) {
+    if (!confirm('هل أنت متأكد من حذف هذا الأمر؟')) return;
+    chrome.storage.local.get(['prompts'], (data) => {
+        const prompts = data.prompts || [];
+        prompts.splice(index, 1);
+        chrome.storage.local.set({ prompts }, () => {
+            renderPrompts(prompts);
+            showSaveStatus();
+        });
+    });
+};
+
+function openPromptModal(prompt = null, index = -1) {
+    const modal = document.getElementById('promptModal');
+    const title = document.getElementById('promptTitle');
+    const content = document.getElementById('promptContent');
+    const idField = document.getElementById('promptId');
+
+    if (prompt) {
+        document.getElementById('modalTitle').textContent = 'تعديل الأمر';
+        title.value = prompt.title;
+        content.value = prompt.content;
+        idField.value = index;
+    } else {
+        document.getElementById('modalTitle').textContent = 'إضافة أمر جديد';
+        title.value = '';
+        content.value = '';
+        idField.value = -1;
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function savePromptFromModal() {
+    const title = document.getElementById('promptTitle').value.trim();
+    const content = document.getElementById('promptContent').value.trim();
+    const index = parseInt(document.getElementById('promptId').value);
+
+    if (!title || !content) {
+        alert('يرجى ملء جميع الحقول');
+        return;
+    }
+
+    chrome.storage.local.get(['prompts'], (data) => {
+        const prompts = data.prompts || [];
+        if (index >= 0) {
+            prompts[index] = { ...prompts[index], title, content };
+        } else {
+            prompts.push({
+                id: crypto.randomUUID(),
+                title,
+                content,
+                createdAt: new Date().toISOString()
+            });
+        }
+
+        chrome.storage.local.set({ prompts }, () => {
+            document.getElementById('promptModal').classList.add('hidden');
+            renderPrompts(prompts);
+            showSaveStatus();
+        });
+    });
+}
