@@ -71,13 +71,21 @@ function handleAutofillSequence() {
 function fillForm(amountInput, durationInput, data) {
     console.log(`Filling form: Amount=${data.amount}, Duration=${data.duration}`);
     
+    // Improved event trigger sequence
     const triggerEvents = (el) => {
+        el.dispatchEvent(new Event('focus', { bubbles: true }));
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
+        
+        // Key events might be needed for some validation logic
         el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
         el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
-        // Some frameworks require 'blur' to commit state
-        el.dispatchEvent(new Event('blur', { bubbles: true }));
+        el.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));
+
+        // Some frameworks require 'blur' to commit state or trigger calculations (like earnings)
+        setTimeout(() => {
+            el.dispatchEvent(new Event('blur', { bubbles: true }));
+        }, 50);
     };
 
     // Fill values
@@ -92,40 +100,42 @@ function fillForm(amountInput, durationInput, data) {
     }
 
     if (amountToFill > 0) {
+        amountInput.focus();
         amountInput.value = amountToFill;
         amountInput.classList.add('mostaql-autofilled');
         triggerEvents(amountInput);
     }
     
-    if (data.duration > 0) {
-        durationInput.value = data.duration;
-        durationInput.classList.add('mostaql-autofilled');
-        triggerEvents(durationInput);
-    }
-
-    // Fill Proposal content
-    if (data.proposal) {
-        const proposalTextarea = document.querySelector('#bid__details') || 
-                                 document.querySelector('#description') || 
-                                 document.querySelector('textarea[name="details"]') ||
-                                 document.querySelector('textarea[name="description"]') ||
-                                 document.querySelector('#proposal-description');
-        if (proposalTextarea) {
-            proposalTextarea.value = data.proposal;
-            proposalTextarea.classList.add('mostaql-autofilled');
-            triggerEvents(proposalTextarea);
-            
-            // Special handling for character counters on some Mostaql versions
-            proposalTextarea.focus();
+    setTimeout(() => {
+        if (data.duration > 0) {
+            durationInput.focus();
+            durationInput.value = data.duration;
+            durationInput.classList.add('mostaql-autofilled');
+            triggerEvents(durationInput);
         }
-    }
+
+        // Fill Proposal content
+        if (data.proposal) {
+            const proposalTextarea = document.querySelector('#bid__details') || 
+                                     document.querySelector('#description') || 
+                                     document.querySelector('textarea[name="details"]') ||
+                                     document.querySelector('textarea[name="description"]') ||
+                                     document.querySelector('#proposal-description');
+            if (proposalTextarea) {
+                proposalTextarea.focus();
+                proposalTextarea.value = data.proposal;
+                proposalTextarea.classList.add('mostaql-autofilled');
+                triggerEvents(proposalTextarea);
+            }
+        }
+    }, 100);
 
     // Scroll to the form
     const form = document.querySelector('#add-proposal-form') || amountInput.closest('form') || amountInput.parentElement;
     if (form) {
         form.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
-        // Show Toast Notification (using existing styles in content.css)
+        // Show Toast Notification
         const toast = document.createElement('div');
         toast.className = 'mostaql-autofill-toast';
         toast.innerHTML = '<i class="fa fa-magic"></i> <span>تم تعبئة تفاصيل العرض تلقائياً!</span>';
@@ -625,12 +635,34 @@ function extractProjectData() {
 }
 
 function getProjectDescription() {
-    // Select the project description text area
-    const descriptionElement = document.querySelector('#project-brief .text-wrapper-div, #projectDetailsTab .text-wrapper-div');
-    if (descriptionElement) {
-        return descriptionElement.innerText.trim();
+    let description = '';
+
+    // 1. Main brief/description paragraph
+    const briefElement = document.querySelector('#project-brief .text-wrapper-div, #projectDetailsTab > .pdn--am > .text-wrapper-div');
+    if (briefElement) {
+        description += briefElement.innerText.trim() + '\n\n';
     }
-    return '';
+
+    // 2. Extract structured fields (Channels, Required delivery, etc.)
+    const detailRows = document.querySelectorAll('#projectDetailsTab .row > div');
+    detailRows.forEach(row => {
+        const label = row.querySelector('.field-label')?.textContent.trim();
+        const value = row.querySelector('.text-wrapper-div:not(.field-label)')?.textContent.trim();
+        
+        if (label && value) {
+            description += `${label}: ${value}\n`;
+        }
+    });
+
+    // 3. Fallback: If nothing found yet, just grab all content in the project body
+    if (!description.trim()) {
+        const fallbackElement = document.getElementById('projectDetailsTab');
+        if (fallbackElement) {
+            description = fallbackElement.innerText.trim();
+        }
+    }
+
+    return description.trim();
 }
 
 function getBudgetFromPage() {
