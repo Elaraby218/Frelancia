@@ -505,7 +505,15 @@ async function checkTrackedProjects() {
   for (const id of projectIds) {
     const project = trackedProjects[id];
     try {
-      const response = await fetch(project.url, { cache: 'no-store' });
+      const response = await fetch(project.url, { 
+        cache: 'no-store',
+        method: 'GET',
+        headers: {
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.9',
+          'Accept-Language': 'ar,en;q=0.9',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        }
+      });
       if (!response.ok) continue;
 
       const html = await response.text();
@@ -732,50 +740,28 @@ function parseMinBudgetValue(budgetText) {
 
 // Play notification sound
 async function playSound() {
-  try {
-    // Check if offscreen document exists
-    let existingContexts = [];
-    try {
-      existingContexts = await chrome.runtime.getContexts({
-        contextTypes: ['OFFSCREEN_DOCUMENT']
-      });
-    } catch (e) {
-      console.log('getContexts not supported, trying to create document');
-    }
-
-    if (existingContexts.length === 0) {
-      try {
-        await chrome.offscreen.createDocument({
-          url: 'offscreen.html',
-          reasons: ['AUDIO_PLAYBACK'],
-          justification: 'Play notification sound'
-        });
-      } catch (e) {
-        if (!e.message.includes('already exists')) {
-          console.error('Error creating offscreen document:', e);
-          return;
-        }
-      }
-    }
-
-    // Send message to play sound
-    setTimeout(() => {
-      chrome.runtime.sendMessage({ action: 'playSound' });
-    }, 100);
-
-  } catch (error) {
-    console.error('Error playing sound:', error);
-  }
+  await triggerOffscreenAction('playSound');
 }
 
 async function playTrackedSound() {
+  await triggerOffscreenAction('playTrackedSound');
+}
+
+async function triggerOffscreenAction(action) {
   try {
     await setupOffscreenDocument();
-    setTimeout(() => {
-      chrome.runtime.sendMessage({ action: 'playTrackedSound' });
-    }, 100);
+    
+    // Slight delay to ensure the document is ready to receive messages
+    await new Promise(r => setTimeout(r, 200));
+    
+    chrome.runtime.sendMessage({ action: action }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.error(`Error sending ${action}:`, chrome.runtime.lastError.message);
+      }
+    });
+
   } catch (error) {
-    console.error('Error playing tracked sound:', error);
+    console.error(`Error in triggerOffscreenAction (${action}):`, error);
   }
 }
 

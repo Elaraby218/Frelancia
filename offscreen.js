@@ -4,6 +4,8 @@
 
 // Listen for messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log(`Offscreen: Received action: ${message.action}`);
+  
   if (message.action === 'playSound') {
     playNotificationSound();
     sendResponse({ success: true });
@@ -151,14 +153,7 @@ function parseProjectDetails(html) {
 }
 
 function playNotificationSound() {
-  const audio = document.getElementById('notificationSound');
-  if (audio) {
-    audio.currentTime = 0;
-    audio.play().catch(error => console.error('Error playing notification sound:', error));
-  } else {
-    // Fallback to beep if audio element is missing
-    playBeep();
-  }
+  playBeep();
 }
 
 // Create a notification sound using Web Audio API (as fallback)
@@ -176,23 +171,16 @@ function playBeep() {
 }
 
 function playTrackedSound() {
-  const audio = document.getElementById('notificationSound');
-  if (audio) {
-    // Use the same sound for tracked projects for now as it's the only available MP3
-    audio.currentTime = 0;
-    audio.play().catch(error => console.error('Error playing tracked sound:', error));
-  } else {
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      // Tracked update: 三 sequence of beeps (high-high-low) or distinct pattern
-      playTone(audioContext, 1200, 0, 0.1);
-      playTone(audioContext, 1200, 0.15, 0.1);
-      playTone(audioContext, 1500, 0.3, 0.2);
-      
-    } catch (error) {
-      console.error('Error playing tracked sound:', error);
-    }
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    
+    // Tracked update: 三 sequence of beeps (high-high-low) or distinct pattern
+    playTone(audioContext, 1200, 0, 0.1);
+    playTone(audioContext, 1200, 0.15, 0.1);
+    playTone(audioContext, 1500, 0.3, 0.2);
+    
+  } catch (error) {
+    console.error('Error playing tracked sound:', error);
   }
 }
 
