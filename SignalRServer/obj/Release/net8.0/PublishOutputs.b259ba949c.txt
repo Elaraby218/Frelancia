@@ -1,0 +1,14 @@
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\MostaqlJobNotifier.exe
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\appsettings.Development.json
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\appsettings.json
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\MostaqlJobNotifier.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\MostaqlJobNotifier.deps.json
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\MostaqlJobNotifier.runtimeconfig.json
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\MostaqlJobNotifier.pdb
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\HtmlAgilityPack.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\Microsoft.OpenApi.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\Newtonsoft.Json.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.Swagger.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerGen.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\Swashbuckle.AspNetCore.SwaggerUI.dll
+D:\study\ITI\Progects\Frelancia\Frelancia\SignalRServer\obj\Release\net8.0\PubTmp\Out\System.Net.WebSockets.WebSocketProtocol.dll

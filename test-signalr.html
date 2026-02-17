@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>SignalR Connection Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+
+        .connected {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .disconnected {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        #logs {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+        }
+
+        .log-success {
+            color: #28a745;
+        }
+
+        .log-error {
+            color: #dc3545;
+        }
+
+        .log-info {
+            color: #007bff;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .job-item {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔌 SignalR Connection Test</h1>
+        <p>Testing real-time connection to Mostaql Job Notifier Server</p>
+
+        <div id="status" class="status disconnected">
+            ⚪ Disconnected
+        </div>
+
+        <div style="margin: 20px 0;">
+            <button class="btn-primary" onclick="connect()">Connect</button>
+            <button class="btn-danger" onclick="disconnect()">Disconnect</button>
+            <button class="btn-primary" onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div class="info">
+            <strong>Server URL:</strong> https://frelancia.runasp.net/jobNotificationHub
+        </div>
+
+        <h3>📋 Connection Logs</h3>
+        <div id="logs"></div>
+
+        <h3>📨 Received Jobs (Server will send in ~1 minute)</h3>
+        <div id="jobs">
+            <p style="color: #666;">Waiting for new job notifications from server...</p>
+        </div>
+    </div>
+
+    <script>
+        let connection = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const entry = document.createElement('div');
+            entry.className = `log-entry log-${type}`;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logs.appendChild(entry);
+            logs.scrollTop = logs.scrollHeight;
+            console.log(message);
+        }
+
+        function setStatus(text, isConnected) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = `status ${isConnected ? 'connected' : 'disconnected'}`;
+        }
+
+        async function connect() {
+            try {
+                log('🔌 Initializing SignalR connection...', 'info');
+
+                connection = new signalR.HubConnectionBuilder()
+                    .withUrl('https://frelancia.runasp.net/jobNotificationHub')
+                    .withAutomaticReconnect()
+                    .configureLogging(signalR.LogLevel.Information)
+                    .build();
+
+                // Handle connection events
+                connection.on('Connected', (data) => {
+                    log(`✅ Connection confirmed! ConnectionId: ${data.connectionId}`, 'success');
+                    log(`Server message: ${data.message}`, 'info');
+                });
+
+                connection.on('NewJobsDetected', (data) => {
+                    log(`🎉 NEW JOBS DETECTED! Count: ${data.count}`, 'success');
+                    log(`Timestamp: ${data.timestamp}`, 'info');
+                    log(`Jobs received with COMPLETE data (server scraped everything):`, 'success');
+
+                    const jobsDiv = document.getElementById('jobs');
+                    jobsDiv.innerHTML = '';
+
+                    data.jobs.forEach((job, index) => {
+                        log(`  Job ${index + 1}: ${job.title} [${job.budget}]`, 'info');
+                        log(`    → Description: ${job.description ? job.description.substring(0, 50) + '...' : 'N/A'}`, 'info');
+                        log(`    → Hiring Rate: ${job.hiringRate || 'N/A'}`, 'info');
+                        log(`    → Duration: ${job.duration || 'N/A'}`, 'info');
+                        log(`    → Status: ${job.status || 'N/A'}`, 'info');
+                        log(`    ✅ ZERO HTTP REQUESTS MADE BY CLIENT!`, 'success');
+
+                        const jobDiv = document.createElement('div');
+                        jobDiv.className = 'job-item';
+                        jobDiv.innerHTML = `
+                            <strong>${job.title}</strong><br>
+                            💰 Budget: ${job.budget}<br>
+                            📊 Hiring Rate: ${job.hiringRate || 'N/A'}<br>
+                            ⏱️ Duration: ${job.duration || 'N/A'}<br>
+                            🔗 <a href="${job.url}" target="_blank">View Job</a><br>
+                            <small style="color: #28a745;">✅ Complete data received from server</small>
+                        `;
+                        jobsDiv.appendChild(jobDiv);
+                    });
+                });
+
+                connection.on('Pong', (timestamp) => {
+                    log(`🏓 Pong received at ${timestamp}`, 'info');
+                });
+
+                connection.onreconnecting(() => {
+                    log('🔄 Reconnecting...', 'info');
+                    setStatus('🔄 Reconnecting...', false);
+                });
+
+                connection.onreconnected((connectionId) => {
+                    log(`✅ Reconnected! New ConnectionId: ${connectionId}`, 'success');
+                    setStatus('🟢 Connected', true);
+                });
+
+                connection.onclose(() => {
+                    log('❌ Connection closed', 'error');
+                    setStatus('🔴 Disconnected', false);
+                });
+
+                // Start connection
+                await connection.start();
+                log('✅ Connection started successfully!', 'success');
+                setStatus('🟢 Connected', true);
+
+            } catch (error) {
+                log(`❌ Connection failed: ${error}`, 'error');
+                setStatus('🔴 Connection Failed', false);
+            }
+        }
+
+        async function disconnect() {
+            if (connection) {
+                await connection.stop();
+                log('🔌 Disconnected by user', 'info');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+            log('📋 Logs cleared', 'info');
+        }
+
+        // Auto-connect on page load
+        window.onload = () => {
+            log('🚀 Test page loaded. Click "Connect" to start...', 'info');
+        };
+    </script>
+</body>
+
+</html>

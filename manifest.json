@@ -12,22 +12,45 @@
   "host_permissions": [
     "https://mostaql.com/*",
     "https://chatgpt.com/*",
-    "https://chat.openai.com/*"
+    "https://chat.openai.com/*",
+    "https://frelancia.runasp.net/*"
   ],
   "content_scripts": [
     {
-      "matches": ["https://mostaql.com/project/*"],
-      "js": ["content.js"],
-      "css": ["content.css"]
+      "matches": [
+        "https://mostaql.com/project/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "content.css"
+      ]
     },
     {
-      "matches": ["https://chatgpt.com/*", "https://chat.openai.com/*"],
-      "js": ["chatgpt.js"]
+      "matches": [
+        "https://chatgpt.com/*",
+        "https://chat.openai.com/*"
+      ],
+      "js": [
+        "chatgpt.js"
+      ]
     }
   ],
   "background": {
     "service_worker": "background.js"
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "signalr.min.js",
+        "signalr-client.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
