@@ -423,6 +423,9 @@ async function fetchJobs(url) {
 
     const response = await fetch(fetchUrl, {
       method: 'GET',
+      // Ensure we do NOT send cookies or credentials so we receive the signed-out/public HTML
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
       headers: {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'ar,en;q=0.9',
@@ -463,6 +466,9 @@ async function fetchProjectDetails(url) {
   try {
     const response = await fetch(url, {
       method: 'GET',
+      // Request without credentials to get the public (signed-out) version of the project page
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer',
       headers: {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'ar,en;q=0.9',
@@ -508,6 +514,9 @@ async function checkTrackedProjects() {
       const response = await fetch(project.url, { 
         cache: 'no-store',
         method: 'GET',
+        // Do not include cookies so tracked checks see the public state
+        credentials: 'omit',
+        referrerPolicy: 'no-referrer',
         headers: {
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.9',
           'Accept-Language': 'ar,en;q=0.9',
