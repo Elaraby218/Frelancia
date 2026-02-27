@@ -71,10 +71,9 @@ chrome.runtime.onInstalled.addListener(() => {
     }
 
     if (!data.proposalTemplate) {
-      changes.proposalTemplate = `السلام عليكم
-لقد قرأت تفاصيل مشروعك وفهمت المطلوب بدقة ويسعدني جدا العمل عليه
+      changes.proposalTemplate = `لقد قرأت تفاصيل مشروعك وفهمت المطلوب بدقة ويسعدني جدا العمل عليه
 
-ارجو التواصل معي لمناقشة المزيد من التفاصيل قبل البدء`;
+انا متحمس لاظهار افضل نتيجة ممكنة وارجو التواصل معي لمناقشة المزيد من التفاصيل قبل البدء`;
     }
 
     if (Object.keys(changes).length > 0) {
