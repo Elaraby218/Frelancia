@@ -38,7 +38,7 @@ const DEFAULT_PROMPTS = [
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed');
 
-  chrome.storage.local.get(['settings', 'seenJobs', 'stats', 'trackedProjects', 'prompts', 'recentJobs'], (data) => {
+  chrome.storage.local.get(['settings', 'seenJobs', 'stats', 'trackedProjects', 'prompts', 'recentJobs', 'proposalTemplate'], (data) => {
     const changes = {};
 
     if (!data.settings) {
@@ -68,6 +68,13 @@ chrome.runtime.onInstalled.addListener(() => {
     // Let's safe-guard: if undefined, seed.
     if (!data.prompts) {
       changes.prompts = DEFAULT_PROMPTS;
+    }
+
+    if (!data.proposalTemplate) {
+      changes.proposalTemplate = `السلام عليكم
+لقد قرأت تفاصيل مشروعك وفهمت المطلوب بدقة ويسعدني جدا العمل عليه
+
+ارجو التواصل معي لمناقشة المزيد من التفاصيل قبل البدء`;
     }
 
     if (Object.keys(changes).length > 0) {

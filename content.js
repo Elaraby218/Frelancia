@@ -154,52 +154,31 @@ function fillForm(amountInput, durationInput, data) {
 }
 
 function injectTrackButton() {
-    // Look for the action buttons in the header
-    const actionContainer = document.querySelector('.header_action-wide-container');
-    if (!actionContainer) return;
+    // Target: Bottom of Project Card section (بطاقة المشروع) in the sidebar
+    const metaCardBody = document.querySelector('#project-meta-panel');
+    if (!metaCardBody) return;
 
     // --- Container for Extension Buttons ---
     let buttonContainer = document.getElementById('mostaql-ext-btn-container');
+    
+    // Ensure it's in the right place
+    if (buttonContainer && buttonContainer.parentElement !== metaCardBody) {
+        buttonContainer.remove();
+        buttonContainer = null;
+    }
+
     if (!buttonContainer) {
+        // Add a separator before the buttons if it doesn't exist
+        if (!metaCardBody.querySelector('.mostaql-ext-separator')) {
+            const hr = document.createElement('hr');
+            hr.className = 'separator mostaql-ext-separator';
+            metaCardBody.appendChild(hr);
+        }
+
         buttonContainer = document.createElement('div');
         buttonContainer.id = 'mostaql-ext-btn-container';
-        // Note: Styles are now handled by #mostaql-ext-btn-container in content.css
-
-        // Find the main "Apply" button or similar primary action. 
-        // Also look for '.btn-info' because "Edit Deal" (طلب تعديل الصفقة) uses btn-info.
-        let primaryBtn = actionContainer.querySelector('a.btn-primary, button.btn-primary, .btn-primary, a.btn-info, button.btn-info, .btn-info');
-
-        // FIX: If the button is part of a btn-group (Split Button), target the group wrapper 
-        // to avoid inserting our buttons INSIDE the native button group.
-        if (primaryBtn && primaryBtn.parentElement && primaryBtn.parentElement.classList.contains('btn-group')) {
-            primaryBtn = primaryBtn.parentElement;
-        }
-
-        if (primaryBtn) {
-            // Re-insert BEFORE (The "Opposite")
-            primaryBtn.insertAdjacentElement('beforebegin', buttonContainer);
-
-            // Ensure the parent container flexes correctly
-            if (primaryBtn.parentElement) {
-                const parent = primaryBtn.parentElement;
-
-                // Minimal inline override to ensure flex behavior
-                parent.style.display = 'flex';
-                parent.style.alignItems = 'center';
-
-                // Reset primary button constraints (now applied to the group if it was a group)
-                primaryBtn.style.float = 'none';
-                primaryBtn.style.marginLeft = '0px';
-                primaryBtn.style.marginRight = '0px';
-            }
-        } else {
-            // Fallback
-            actionContainer.appendChild(buttonContainer);
-            if (actionContainer) {
-                actionContainer.style.display = 'flex';
-                actionContainer.style.alignItems = 'center';
-            }
-        }
+        buttonContainer.className = 'mostaql-ext-sidebar-container';
+        metaCardBody.appendChild(buttonContainer);
     }
 
     // START CHECKPOINT: Clear any old/legacy elements (like the separate select box) 
@@ -213,8 +192,8 @@ function injectTrackButton() {
     if (!document.getElementById('track-project-btn')) {
         const trackBtn = document.createElement('button');
         trackBtn.id = 'track-project-btn';
-        trackBtn.className = 'btn btn-success'; // Base Mostaql class + our overrides
-        trackBtn.innerHTML = '<i class="fa fa-fw fa-eye"></i> مراقبة المشروع';
+        trackBtn.className = 'btn btn-success';
+        trackBtn.innerHTML = '<i class="fa fa-fw fa-eye"></i> <span class="action-text">مراقبة</span>';
         trackBtn.title = 'مراقبة المشروع';
         // Order handled by DOM position now usually, or CSS
 
@@ -237,6 +216,21 @@ function injectTrackButton() {
         buttonContainer.appendChild(trackBtn);
     }
 
+    // --- Fast Apply (Quick) Button ---
+    if (!document.getElementById('header-quick-bid-btn')) {
+        const quickBtn = document.createElement('button');
+        quickBtn.id = 'header-quick-bid-btn';
+        quickBtn.className = 'btn btn-success';
+        quickBtn.innerHTML = '<i class="fa fa-fw fa-bolt"></i> <span class="action-text">سريع</span>';
+        quickBtn.title = 'تعبئة العرض الافتراضي والميزانية الدنيا';
+
+        quickBtn.addEventListener('click', () => {
+            handleQuickBidClick();
+        });
+
+        buttonContainer.appendChild(quickBtn);
+    }
+
     // --- ChatGPT Split Button ---
     if (!document.getElementById('chatgpt-group')) {
         const chatGptGroupId = 'chatgpt-group';
@@ -253,8 +247,8 @@ function injectTrackButton() {
         mainBtn.id = 'chatgpt-main-btn';
         mainBtn.className = 'btn btn-primary';
         mainBtn.href = 'javascript:void(0);';
-        mainBtn.innerHTML = '<i class="fa fa-fw fa-comments-o"></i> <span class="action-text">استشارة AI</span>';
-        mainBtn.title = 'استخدام القالب الافتراضي أو المحدد';
+        mainBtn.innerHTML = '<i class="fa fa-fw fa-magic"></i> <span class="action-text">ذكاء</span>';
+        mainBtn.title = 'استشارة الذكاء الاصطناعي';
 
         // Store selected prompt info in dataset
         mainBtn.dataset.promptId = 'default_proposal';
@@ -420,13 +414,13 @@ function handleTrackClick(btn) {
 }
 
 function setButtonTracked(btn) {
-    btn.innerHTML = '<i class="fa fa-fw fa-check-circle"></i> مُراقبة';
+    btn.innerHTML = '<i class="fa fa-fw fa-check-circle"></i> <span class="action-text">مُراقبة</span>';
     btn.className = 'btn btn-warning'; // Change color to indicate active state
     btn.title = 'إلغاء المراقبة';
 }
 
 function setButtonUntracked(btn) {
-    btn.innerHTML = '<i class="fa fa-fw fa-eye"></i> مراقبة المشروع';
+    btn.innerHTML = '<i class="fa fa-fw fa-eye"></i> <span class="action-text">مراقبة</span>';
     btn.className = 'btn btn-success';
     btn.title = 'مراقبة هذا المشروع';
 }
@@ -525,6 +519,45 @@ function handleChatGptClick(promptId) {
         } // End processTemplate
 
     }); // End loadPrompts callback
+}
+
+function handleQuickBidClick() {
+    console.log('Mostaql Ext: Fast Apply (Quick) clicked.');
+
+    const projectId = getProjectId();
+    if (!projectId) return;
+
+    // Get default data
+    chrome.storage.local.get(['proposalTemplate'], (data) => {
+        const proposal = data.proposalTemplate || `السلام عليكم
+لقد قرأت تفاصيل مشروعك وفهمت المطلوب بدقة ويسعدني جدا العمل عليه
+
+ارجو التواصل معي لمناقشة المزيد من التفاصيل قبل البدء`;
+
+        const minBudget = getBudgetFromPage();
+        const projectData = extractProjectData();
+        
+        // Duration: Extract number if possible
+        let durationDays = 0;
+        if (projectData.duration) {
+            const match = projectData.duration.match(/\d+/);
+            if (match) durationDays = parseInt(match[0]);
+            else if (projectData.duration.includes("يوم واحد")) durationDays = 1;
+        }
+
+        const autofillData = {
+            projectId: projectId,
+            amount: minBudget,
+            duration: durationDays,
+            proposal: proposal,
+            timestamp: Date.now()
+        };
+
+        // Reuse the handleAutofillSequence logic
+        chrome.storage.local.set({ 'mostaql_pending_autofill': autofillData }, () => {
+            handleAutofillSequence();
+        });
+    });
 }
 
 function getProjectId() {
