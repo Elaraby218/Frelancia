@@ -2,12 +2,29 @@
 // Mostaql Job Notifier - Background Service Worker
 // ==========================================
 
+// Load SignalR client library
+let SIGNALR_AVAILABLE = false;
+try {
+  importScripts('signalr.min.js', 'signalr-client.js');
+  SIGNALR_AVAILABLE = true;
+  console.log('✅ SignalR libraries loaded successfully');
+} catch (e) {
+  console.warn('⚠️ SignalR libraries not found. Real-time notifications disabled.');
+  console.warn('📥 Download signalr.min.js from: https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js');
+  console.warn('💡 Extension will work with traditional polling until SignalR is set up.');
+}
+
+// Import SignalR client library (loaded via importScripts)
+/* global signalR, signalRClient */
+
 // URLs to monitor
 const MOSTAQL_URLS = {
   development: 'https://mostaql.com/projects?category=development&sort=latest',
   ai: 'https://mostaql.com/projects?category=ai-machine-learning&sort=latest',
   all: 'https://mostaql.com/projects?sort=latest'
 };
+
+
 
 const DEFAULT_PROMPTS = [
   {
@@ -81,17 +98,103 @@ chrome.runtime.onInstalled.addListener(() => {
     }
   });
 
-  // Create alarm for checking jobs
+  // Create alarm for checking jobs (still used for tracked projects and fallback)
   chrome.alarms.create('checkJobs', { periodInMinutes: 1 });
+
+  // Note: SignalR will be initialized by initOnStartup() below
 });
 
 // Listen for alarm
-chrome.alarms.onAlarm.addListener((alarm) => {
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'checkJobs') {
-    checkForNewJobs();
+    const data = await chrome.storage.local.get(['settings']);
+    const notificationMode = (data.settings || {}).notificationMode || 'auto';
+
+    // Always check tracked projects regardless of mode
     checkTrackedProjects();
+
+    if (notificationMode === 'polling') {
+      // User chose polling only — skip SignalR entirely
+      console.log('📡 Notification mode: polling — checking for new jobs');
+      checkForNewJobs();
+
+    } else if (notificationMode === 'signalr') {
+      // User chose SignalR only — reconnect if needed, never poll
+      await initializeSignalR();
+
+    } else {
+      // Auto mode: try SignalR, fall back to polling if disconnected
+      await initializeSignalR();
+
+      const isSignalRActive = SIGNALR_AVAILABLE
+        && typeof signalRClient !== 'undefined'
+        && signalRClient.isConnected;
+
+      if (!isSignalRActive) {
+        console.log('⚠️ SignalR not connected, using polling fallback for new jobs');
+        checkForNewJobs();
+      }
+    }
+  }
+
+  // Handle SignalR reconnection alarm (created by signalr-client.js)
+  if (alarm.name === 'signalRReconnect') {
+    console.log('SignalR: Reconnect alarm fired, attempting to reconnect...');
+    if (SIGNALR_AVAILABLE && typeof signalRClient !== 'undefined') {
+      signalRClient.connect();
+    }
   }
 });
+
+// Initialize SignalR on service worker startup (respects user mode)
+(async function initOnStartup() {
+  console.log('Service worker started');
+  const data = await chrome.storage.local.get(['settings']);
+  const mode = (data.settings || {}).notificationMode || 'auto';
+
+  if (mode === 'polling') {
+    console.log('📡 Notification mode: polling — skipping SignalR init');
+    return;
+  }
+  await initializeSignalR();
+})();
+
+// Initialize SignalR connection
+async function initializeSignalR() {
+  try {
+    if (!SIGNALR_AVAILABLE) {
+      console.log('⚠️ SignalR not available. Using polling mode.');
+      return;
+    }
+
+    if (typeof signalRClient === 'undefined') {
+      console.warn('SignalR client not available. Make sure signalr-client.js is loaded.');
+      return;
+    }
+
+    // Skip if already connected
+    if (signalRClient.isConnected) {
+      return;
+    }
+
+    console.log('Initializing SignalR connection...');
+
+    // Register fallback callback: when max reconnect attempts fail
+    signalRClient.onFallbackActivated(() => {
+      console.warn('🔄 SignalR fallback activated — polling will handle new jobs.');
+    });
+
+    // Register reconnection callback: when SignalR comes back online
+    signalRClient.onReconnected(() => {
+      console.log('✅ SignalR reconnected — polling fallback deactivated.');
+    });
+
+    await signalRClient.connect();
+    console.log('SignalR connection established');
+  } catch (error) {
+    console.error('Error initializing SignalR:', error);
+  }
+}
 
 // Check for new jobs
 async function checkForNewJobs() {
@@ -179,7 +282,7 @@ async function checkForNewJobs() {
     console.log(`Phase 1 Commit: Saved ${allNewJobs.length} new jobs to dashboard.`);
 
     // --- PHASE 2: Deep Filtering & Notifications ---
-    
+
     // 2.1 Enrichment: Ensure top 10 projects have full details
     // This helps if they were seen previously but details were never fetched
     const top10 = recentJobs.slice(0, 10);
@@ -228,7 +331,7 @@ async function checkForNewJobs() {
       console.log(`Deep checking job ${job.id} for details...`);
       try {
         const projectDetails = await fetchProjectDetails(job.url);
-        
+
         if (projectDetails) {
           // Enrich job object with details
           job.description = projectDetails.description;
@@ -237,7 +340,7 @@ async function checkForNewJobs() {
           job.communications = projectDetails.communications;
           job.duration = projectDetails.duration;
           job.registrationDate = projectDetails.registrationDate;
-          
+
           if ((!job.budget || job.budget === 'غير محدد') && projectDetails.budget) {
             job.budget = projectDetails.budget;
           }
@@ -345,7 +448,7 @@ function applyFilters(job, settings) {
 function parseHiringRate(rateText) {
   if (!rateText) return 0;
   if (rateText.includes('بعد')) return 0; // "لم يحسب بعد"
-  
+
   // Extract number, including potential decimals (e.g., 46.67%)
   const match = rateText.replace(/,/g, '').match(/\d+(\.\d+)?/);
   if (match) {
@@ -368,22 +471,22 @@ function calculateClientAgeDays(dateText) {
     'يناير': 0, 'فبراير': 1, 'مارس': 2, 'أبريل': 3, 'مايو': 4, 'يونيو': 5,
     'يوليو': 6, 'أغسطس': 7, 'سبتمبر': 8, 'أكتوبر': 9, 'نوفمبر': 10, 'ديسمبر': 11
   };
-  
+
   const parts = dateText.split(' ');
   if (parts.length < 3) return -1;
-  
+
   const day = parseInt(parts[0]);
   const monthName = parts[1];
   const year = parseInt(parts[2]);
   const month = arabicMonths[monthName];
-  
+
   if (isNaN(day) || month === undefined || isNaN(year)) return -1;
-  
+
   const regDate = new Date(year, month, day);
   const now = new Date();
   const diffTime = Math.abs(now - regDate);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-  
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
   return diffDays;
 }
 
@@ -393,7 +496,7 @@ function parseBudgetValue(budgetText) {
   // We extract all numbers (including decimals) and take the HIGHEST to see if it meets the user's minimum
   const matches = budgetText.replace(/,/g, '').match(/\d+(\.\d+)?/g);
   if (!matches) return 0;
-  
+
   // Return the maximum value found in the range
   const values = matches.map(m => parseFloat(m));
   return Math.max(...values);
@@ -511,7 +614,7 @@ async function checkTrackedProjects() {
   for (const id of projectIds) {
     const project = trackedProjects[id];
     try {
-      const response = await fetch(project.url, { 
+      const response = await fetch(project.url, {
         cache: 'no-store',
         method: 'GET',
         headers: {
@@ -704,13 +807,13 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
 
     if (buttonIndex === 0) { // "قدّم الآن" (Apply Now)
       console.log(`Apply Now clicked for job ${job.id}`);
-      
+
       // Get all necessary data from storage
       chrome.storage.local.get(['proposalTemplate'], (settingsData) => {
         // Prepare autofill data
         const minBudget = parseMinBudgetValue(job.budget);
         const durationDays = parseDurationDays(job.duration || "");
-        
+
         const autofillData = {
           projectId: job.id,
           amount: minBudget,
@@ -728,7 +831,7 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
     } else { // "فتح المشروع" (Open Project)
       chrome.tabs.create({ url: job.url });
     }
-    
+
     chrome.storage.local.remove([`notification_${notificationId}`]);
   });
 });
@@ -738,7 +841,7 @@ function parseMinBudgetValue(budgetText) {
   // Extract all numbers (including decimals)
   const matches = budgetText.replace(/,/g, '').match(/\d+(\.\d+)?/g);
   if (!matches) return 0;
-  
+
   // Return the MINIMUM value for autofill (user requested lowest offer)
   const values = matches.map(m => parseFloat(m));
   return Math.min(...values);
@@ -756,10 +859,10 @@ async function playTrackedSound() {
 async function triggerOffscreenAction(action) {
   try {
     await setupOffscreenDocument();
-    
+
     // Slight delay to ensure the document is ready to receive messages
     await new Promise(r => setTimeout(r, 200));
-    
+
     chrome.runtime.sendMessage({ action: action }, (response) => {
       if (chrome.runtime.lastError) {
         console.error(`Error sending ${action}:`, chrome.runtime.lastError.message);
@@ -771,7 +874,7 @@ async function triggerOffscreenAction(action) {
   }
 }
 
-    
+
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

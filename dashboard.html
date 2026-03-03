@@ -97,6 +97,15 @@
                             <span class="label">آخر فحص</span>
                         </div>
                     </div>
+                    <div class="stat-card" id="connection-status-card">
+                        <div class="stat-icon green" id="connection-status-icon">
+                            <i class="fas fa-wifi"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="value" id="stat-connection" style="font-size: 14px;">جارٍ الاتصال...</span>
+                            <span class="label">حالة الاتصال</span>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-section">
@@ -247,6 +256,26 @@
                             <label>تكرار الفحص (بالدقائق)</label>
                             <input type="number" id="checkInterval" class="form-control" placeholder="مثلاً: 1" min="1">
                             <p class="help-text">عدد الدقائق بين كل عملية فحص للمشاريع الجديدة.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-satellite-dish"></i>
+                            <h3>وضع الإشعارات</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>طريقة استقبال المشاريع الجديدة</label>
+                            <select id="notificationMode" class="form-control">
+                                <option value="auto">تلقائي (SignalR مع احتياطي)</option>
+                                <option value="signalr">اتصال مباشر فقط (SignalR)</option>
+                                <option value="polling">استعلام دوري فقط (Polling)</option>
+                            </select>
+                            <p class="help-text">
+                                <strong>تلقائي:</strong> يبدأ بالاتصال المباشر، ويتحول للاستعلام تلقائياً عند انقطاع السيرفر.<br>
+                                <strong>اتصال مباشر:</strong> إشعارات فورية عبر السيرفر (بدون طلبات HTTP).<br>
+                                <strong>استعلام دوري:</strong> يفحص الموقع كل فترة زمنية محددة.
+                            </p>
                         </div>
                     </div>
 

@@ -3,10 +3,39 @@
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize
     loadData();
+    loadConnectionStatus();
     setupEventListeners();
 });
+
+// --- Connection Status ---
+function loadConnectionStatus() {
+    chrome.storage.local.get(['signalRConnected', 'signalRFallbackActive', 'settings'], (data) => {
+        const statusEl = document.getElementById('stat-connection');
+        const iconEl = document.getElementById('connection-status-icon');
+        if (!statusEl || !iconEl) return;
+
+        const mode = (data.settings || {}).notificationMode || 'auto';
+
+        if (mode === 'polling') {
+            statusEl.textContent = 'استعلام دوري';
+            iconEl.className = 'stat-icon blue';
+            iconEl.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        } else if (data.signalRConnected) {
+            statusEl.textContent = 'اتصال مباشر';
+            iconEl.className = 'stat-icon green';
+            iconEl.innerHTML = '<i class="fas fa-wifi"></i>';
+        } else if (data.signalRFallbackActive) {
+            statusEl.textContent = 'وضع الاستعلام';
+            iconEl.className = 'stat-icon orange';
+            iconEl.innerHTML = '<i class="fas fa-sync-alt"></i>';
+        } else {
+            statusEl.textContent = 'غير متصل';
+            iconEl.className = 'stat-icon purple';
+            iconEl.innerHTML = '<i class="fas fa-plug"></i>';
+        }
+    });
+}
 
 // --- Tab Management ---
 function setupTabSwitching() {
@@ -77,6 +106,7 @@ function loadData() {
         setVal('quietHoursEnd', s.quietHoursEnd);
         setVal('checkInterval', s.interval || 1);
         setVal('systemToggle', s.systemEnabled !== false);
+        setVal('notificationMode', s.notificationMode || 'auto');
 
         // Proposals
         document.getElementById('proposalTemplate').value = data.proposalTemplate || '';
@@ -288,7 +318,8 @@ function saveAllSettings() {
         quietHoursStart: getVal('quietHoursStart'),
         quietHoursEnd: getVal('quietHoursEnd'),
         interval: parseInt(getVal('checkInterval')) || 1,
-        systemEnabled: getVal('systemToggle')
+        systemEnabled: getVal('systemToggle'),
+        notificationMode: getVal('notificationMode') || 'auto'
     };
 
     const proposalTemplate = document.getElementById('proposalTemplate').value;
