@@ -1282,12 +1282,21 @@ function injectDashboardStats() {
             `;
             
             const sortedBids = recent24hBids.sort((a,b) => b.ageMs - a.ageMs);
-            // Balance across 3 columns dynamically
-            const numCols = 3;
-            const chunkSize = Math.max(1, Math.ceil(sortedBids.length / numCols));
             
-            for (let i = 0; i < sortedBids.length; i += chunkSize) {
-                const chunk = sortedBids.slice(i, i + chunkSize);
+            // Distribute across 3 columns as evenly as possible (e.g., 7 bids -> 3, 2, 2)
+            const numCols = 3;
+            let remaining = sortedBids.length;
+            let startIndex = 0;
+            
+            for (let i = 0; i < numCols; i++) {
+                if (startIndex >= sortedBids.length && i > 0) break; // Allow at least the first column to render the header
+                
+                const colsLeft = numCols - i;
+                const chunkSize = Math.max(0, Math.ceil(remaining / colsLeft));
+                const chunk = sortedBids.slice(startIndex, startIndex + chunkSize);
+                
+                startIndex += chunkSize;
+                remaining -= chunkSize;
                 
                 countdownsHtml += `<div class="col-sm-4 progress__bars">`;
                 
