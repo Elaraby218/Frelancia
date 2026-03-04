@@ -989,6 +989,10 @@ function injectDashboardStats() {
         });
     });
 
+    // We no longer extract and hide the original "Available Bids" column, 
+    // we want to keep the original Mostaql row visible so the user doesn't lose their plan limits.
+
+
 
     function extractBidRow(renderedHtml) {
         if (typeof renderedHtml !== 'string') {
@@ -1068,6 +1072,8 @@ function injectDashboardStats() {
         const overall = makeEmptyBucket();
         const last30Days = makeEmptyBucket();
         const last1Day = makeEmptyBucket();
+        
+        const recent24hBids = []; // Store bids from the last 24h to calculate countdowns
 
         const addToBucket = (bucket, status) => {
             bucket.total += 1;
@@ -1094,7 +1100,10 @@ function injectDashboardStats() {
             if (ageMs < 0) continue;
 
             if (ageMs <= days30Ms) addToBucket(last30Days, status);
-            if (ageMs <= day1Ms) addToBucket(last1Day, status);
+            if (ageMs <= day1Ms) {
+                addToBucket(last1Day, status);
+                recent24hBids.push({ title: item.title, url: item.url, ageMs, published });
+            }
         }
 
         const uniqueStatuses = Array.from(
@@ -1110,6 +1119,7 @@ function injectDashboardStats() {
             status: overall,        // overall counts
             last30Days: last30Days, // within last 30 days
             last1Day: last1Day,     // within last 24 hours
+            recent24hBids: recent24hBids // detailed bids for countdowns
         };
     }
 
@@ -1236,7 +1246,7 @@ function injectDashboardStats() {
                 ${bars.length > 0 ? bars.join('') : `<span class="text-muted mostaql-stats-empty">${emptyMsg || ''}</span>`}
             </div>`;
 
-        const { status: overall, last30Days, last1Day } = stats;
+        const { status: overall, last30Days, last1Day, recent24hBids } = stats;
 
         // ── Overall ──
         const overallColumn = renderColumn({
@@ -1264,16 +1274,176 @@ function injectDashboardStats() {
             emptyMsg: 'لا توجد عروض اليوم',
         });
 
+        // ── Build Countdowns Row ──
+        let countdownsHtml = '';
+        if (recent24hBids && recent24hBids.length > 0) {
+            countdownsHtml = `
+            <div class="row" style="margin-top:20px;">
+            `;
+            
+            const sortedBids = recent24hBids.sort((a,b) => b.ageMs - a.ageMs);
+            // Balance across 3 columns dynamically
+            const numCols = 3;
+            const chunkSize = Math.max(1, Math.ceil(sortedBids.length / numCols));
+            
+            for (let i = 0; i < sortedBids.length; i += chunkSize) {
+                const chunk = sortedBids.slice(i, i + chunkSize);
+                
+                countdownsHtml += `<div class="col-sm-4 progress__bars">`;
+                
+                if (i === 0) {
+                    countdownsHtml += `
+                    <p class="text-muted mostaql-stats-header">
+                        <i class="fa fa-refresh"></i> عروض تسترد قريباً
+                    </p>
+                    `;
+                } else {
+                    // Match the header height so columns align perfectly
+                    countdownsHtml += `
+                    <p class="mostaql-stats-header" style="visibility:hidden;">
+                        -
+                    </p>
+                    `;
+                }
+                
+                countdownsHtml += chunk.map(bid => {
+                    // Calculate time left
+                    const totalMs = 24 * 60 * 60 * 1000;
+                    const msLeft = totalMs - bid.ageMs;
+                    if (msLeft <= 0) return '';
+                    
+                    const pct = Math.max(0, Math.min(100, Math.round(((totalMs - msLeft) / totalMs) * 100)));
+                    const appliedAtStr = bid.published.toLocaleTimeString('ar-EG', { hour: '2-digit', minute:'2-digit' });
+                    
+                    // Colors change as it gets closer to 100%
+                    let color = '#dc3545'; // Red for < 25% (just applied)
+                    if (pct >= 85) color = '#28a745'; // Green (almost ready)
+                    else if (pct >= 50) color = '#ffc107'; // Yellow
+                    else if (pct >= 25) color = '#17a2b8'; // Cyan
+                    
+                    return `
+                        <a href="${bid.url || '#'}" ${bid.url ? 'target="_blank"' : ''} class="progress__bar docs-creator">
+                            <div class="projects-progress" title="قُدِّم: ${appliedAtStr}">
+                                <div class="clearfix">
+                                    <div class="pull-right" style="max-width: 65%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                        ${bid.title || 'عرض'}
+                                    </div>
+                                    <div class="pull-left frelancia-countdown" data-ms-left="${msLeft}" style="color:${color}; font-family:monospace; font-weight:bold; letter-spacing:0.5px; direction:ltr;">
+                                        --:--:--
+                                    </div>
+                                </div>
+                                <div class="progress progress--slim">
+                                    <div class="progress-bar frelancia-progress-bar" role="progressbar" style="width:${pct}%; background-color:${color};">
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                }).join('');
+                
+                countdownsHtml += `</div>`;
+            }
+            
+            countdownsHtml += `</div>`;
+        }
+
         // ── Render ──
         const existing = document.getElementById('mostaql-bid-stats');
         if (existing) existing.remove();
+        
+        const existingSlotsRow = document.getElementById('mostaql-bid-slots-row');
+        if (existingSlotsRow) existingSlotsRow.remove();
 
-        box.insertAdjacentHTML('afterend', `
-            <div class="row content-middle-sm" id="mostaql-bid-stats">
-                ${overallColumn}
-                ${last30Column}
-                ${todayColumn}
-            </div>`);
+        // Inject the custom stats ABOVE the original row
+        // target is #project-states
+        const firstNativeRow = target.querySelector('.row');
+        if (firstNativeRow) {
+            firstNativeRow.insertAdjacentHTML('beforebegin', `
+                <div class="row content-middle-sm" id="mostaql-bid-stats" style="margin-bottom:20px;">
+                    ${overallColumn}
+                    ${last30Column}
+                    ${todayColumn}
+                </div>
+            `);
+            
+            // And inject countdowns BELOW the original row
+            if (countdownsHtml) {
+                firstNativeRow.insertAdjacentHTML('afterend', `
+                    <div id="mostaql-bid-slots-row">${countdownsHtml}</div>
+                `);
+            }
+        } else {
+            // Fallback
+            box.insertAdjacentHTML('afterend', `
+                <div class="row content-middle-sm" id="mostaql-bid-stats">
+                    ${overallColumn}
+                    ${last30Column}
+                    ${todayColumn}
+                </div>
+                ${countdownsHtml ? `<div id="mostaql-bid-slots-row">${countdownsHtml}</div>` : ''}
+            `);
+        }
+            
+        // Start timers
+        startSlotCountdowns();
+    }
+    
+    function startSlotCountdowns() {
+        if (window.frelanciaCountdownsInterval) {
+            clearInterval(window.frelanciaCountdownsInterval);
+        }
+        
+        const updateTimers = () => {
+            const totalMs = 24 * 60 * 60 * 1000;
+            document.querySelectorAll('.frelancia-countdown').forEach(el => {
+                let msLeft = parseInt(el.getAttribute('data-ms-left'), 10);
+                if (isNaN(msLeft) || msLeft <= 0) {
+                    el.textContent = 'متاح الآن!';
+                    el.style.color = '#28a745';
+                    
+                    const container = el.closest('.projects-progress');
+                    if (container) {
+                        const bar = container.querySelector('.progress-bar');
+                        if (bar) {
+                            bar.style.width = '100%';
+                            bar.style.backgroundColor = '#28a745';
+                        }
+                    }
+                    return;
+                }
+                
+                msLeft -= 1000;
+                el.setAttribute('data-ms-left', msLeft);
+                
+                const hours = Math.floor(msLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((msLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((msLeft % (1000 * 60)) / 1000);
+                
+                el.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Update progress bar
+                const pct = Math.max(0, Math.min(100, ((totalMs - msLeft) / totalMs) * 100));
+                
+                let color = '#dc3545'; // Red for < 25% (just applied)
+                if (pct >= 85) color = '#28a745'; // Green (almost ready)
+                else if (pct >= 50) color = '#ffc107'; // Yellow
+                else if (pct >= 25) color = '#17a2b8'; // Cyan
+                
+                el.style.color = color;
+                
+                const container = el.closest('.projects-progress');
+                if (container) {
+                    const bar = container.querySelector('.progress-bar');
+                    if (bar) {
+                        bar.style.width = `${pct}%`;
+                        bar.style.backgroundColor = color;
+                    }
+                }
+            });
+        };
+        
+        updateTimers(); // Initial call
+        window.frelanciaCountdownsInterval = setInterval(updateTimers, 1000);
     }
 
     async function loadStats() {
