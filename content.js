@@ -1332,7 +1332,7 @@ function injectDashboardStats() {
                     
                     return `
                         <a href="${bid.url || '#'}" ${bid.url ? 'target="_blank"' : ''} class="progress__bar docs-creator">
-                            <div class="projects-progress" title="وقت التقديم: ${appliedAtStr}">
+                            <div class="projects-progress" title="تاريخ التقديم: ${appliedAtStr}">
                                 <div class="clearfix">
                                     <div class="pull-right" style="max-width: 65%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                                         ${bid.title || 'عرض'}
