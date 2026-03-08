@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="dashboard-bids.css">
 </head>
+
 <body>
     <div class="dashboard-container">
         <!-- Sidebar Navigation -->
@@ -41,6 +43,14 @@
                     <i class="fas fa-file-contract"></i>
                     <span>نماذج العروض</span>
                 </button>
+                <button class="nav-item" data-tab="profile-analyzer">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>محلل الملف الشخصي</span>
+                </button>
+                <button class="nav-item" data-tab="productivity">
+                    <i class="fas fa-stopwatch"></i>
+                    <span>وضع الإنتاجية</span>
+                </button>
                 <button class="nav-item" data-tab="settings">
                     <i class="fas fa-cog"></i>
                     <span>الإعدادات المتقدمة</span>
@@ -68,7 +78,7 @@
 
         <!-- Main Content Area -->
         <main class="main-content">
-            
+
             <!-- Overview Tab -->
             <div class="tab-container" id="overview-tab">
                 <div class="content-header">
@@ -120,11 +130,14 @@
                 <div class="settings-section">
                     <div class="section-header">
                         <i class="fas fa-eye"></i>
-                        <h3>المشاريع المراقبة <span style="font-size:12px; font-weight:600; color:var(--text-muted); margin-right:8px;">آخر 7 مشاريع</span></h3>
+                        <h3>المشاريع المراقبة <span
+                                style="font-size:12px; font-weight:600; color:var(--text-muted); margin-right:8px;">آخر
+                                7 مشاريع</span></h3>
                     </div>
                     <div id="recentProjectsList" class="recent-list">
                         <!-- Projects will be loaded here -->
-                        <p class="help-text" style="text-align: center; padding: 40px;">سيتم عرض آخر المشاريع المرصودة هنا بمجرد توفرها.</p>
+                        <p class="help-text" style="text-align: center; padding: 40px;">سيتم عرض آخر المشاريع المرصودة
+                            هنا بمجرد توفرها.</p>
                     </div>
                 </div>
             </div>
@@ -196,7 +209,8 @@
                 <div class="settings-section">
                     <div class="section-header">
                         <i class="fas fa-stream"></i>
-                        <h3>جدول العروض <span class="bids-tracker-sub">العد التنازلي حتى انتهاء فترة الـ 30 يوم</span></h3>
+                        <h3>جدول العروض <span class="bids-tracker-sub">العد التنازلي حتى انتهاء فترة الـ 30 يوم</span>
+                        </h3>
                     </div>
                     <div id="bidsTimelineList" class="bids-timeline">
                         <div class="bids-loading">
@@ -224,12 +238,15 @@
                         </div>
                         <div class="form-group">
                             <label>كلمات يجب توفرها (تضمين)</label>
-                            <input type="text" id="keywordsInclude" class="form-control" placeholder="React, Node, تصميم...">
-                            <p class="help-text">افصل بين الكلمات بفاصلة. سيتم إخطارك فقط إذا احتوى المشروع على أحدها.</p>
+                            <input type="text" id="keywordsInclude" class="form-control"
+                                placeholder="React, Node, تصميم...">
+                            <p class="help-text">افصل بين الكلمات بفاصلة. سيتم إخطارك فقط إذا احتوى المشروع على أحدها.
+                            </p>
                         </div>
                         <div class="form-group">
                             <label>كلمات مستبعدة</label>
-                            <input type="text" id="keywordsExclude" class="form-control" placeholder="Wordpress, PHP...">
+                            <input type="text" id="keywordsExclude" class="form-control"
+                                placeholder="Wordpress, PHP...">
                             <p class="help-text">سيتم تجاهل أي مشروع يحتوي على هذه الكلمات تماماً.</p>
                         </div>
                     </div>
@@ -313,7 +330,8 @@
                 <div class="settings-section">
                     <div class="form-group">
                         <label>نص العرض الافتراضي</label>
-                        <textarea id="proposalTemplate" rows="15" class="form-control" placeholder="اكتب عرضك هنا..."></textarea>
+                        <textarea id="proposalTemplate" rows="15" class="form-control"
+                            placeholder="اكتب عرضك هنا..."></textarea>
                         <p class="help-text">سيتم وضع هذا النص تلقائياً في خانة تفاصيل العرض في موقع مستقل.</p>
                     </div>
                 </div>
@@ -336,7 +354,8 @@
                         </div>
                         <div class="form-group">
                             <label>رابط الشات المفضل</label>
-                            <input type="text" id="aiChatUrl" class="form-control" placeholder="https://chatgpt.com/" dir="ltr">
+                            <input type="text" id="aiChatUrl" class="form-control" placeholder="https://chatgpt.com/"
+                                dir="ltr">
                             <p class="help-text">يمكنك استخدام رابط مخصص أو رابط مشروع ChatGPT بعينه.</p>
                         </div>
                         <div class="form-group">
@@ -359,7 +378,8 @@
                                 <option value="polling">استعلام دوري فقط (Polling)</option>
                             </select>
                             <p class="help-text">
-                                <strong>تلقائي:</strong> يبدأ بالاتصال المباشر، ويتحول للاستعلام تلقائياً عند انقطاع السيرفر.<br>
+                                <strong>تلقائي:</strong> يبدأ بالاتصال المباشر، ويتحول للاستعلام تلقائياً عند انقطاع
+                                السيرفر.<br>
                                 <strong>اتصال مباشر:</strong> إشعارات فورية عبر السيرفر (بدون طلبات HTTP).<br>
                                 <strong>استعلام دوري:</strong> يفحص الموقع كل فترة زمنية محددة.
                             </p>
@@ -396,7 +416,8 @@
                             <h3>أدوات الفحص</h3>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 15px;">
-                            <button id="testNotificationBtn" class="btn-secondary" style="flex: 1; justify-content: center;">
+                            <button id="testNotificationBtn" class="btn-secondary"
+                                style="flex: 1; justify-content: center;">
                                 <i class="fas fa-bell"></i> فحص الإشعار
                             </button>
                             <button id="testSoundBtn" class="btn-secondary" style="flex: 1; justify-content: center;">
@@ -407,6 +428,246 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Profile Analyzer Tab -->
+            <div class="tab-container hidden" id="profile-analyzer-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>محلل الملف الشخصي</h2>
+                        <p>تحليل شامل لملفك على مستقل مع اقتراحات ذكية لتحسين فرصك.</p>
+                    </div>
+                </div>
+
+                <!-- Analyzer Placeholder (shown before analysis) -->
+                <div id="analyzerPlaceholder" class="settings-section">
+                    <div class="analyzer-placeholder">
+                        <i class="fas fa-user-chart"></i>
+                        <h4>ابدأ تحليل ملفك الشخصي</h4>
+                        <p>اضغط الزر أدناه لتحليل ملفك على مستقل والحصول على نصائح مخصصة لتحسين فرصك في الحصول على
+                            مشاريع أكثر.</p>
+                        <button id="startAnalysisBtn" class="btn-analyze">
+                            <i class="fas fa-search-plus"></i>
+                            تحليل الملف الشخصي
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analyzer Results (hidden until analysis runs) -->
+                <div id="analyzerResults" class="hidden">
+                    <div class="analyzer-grid">
+                        <!-- Card 1: Score Gauge -->
+                        <div class="settings-section">
+                            <div class="section-header">
+                                <i class="fas fa-bullseye"></i>
+                                <h3>نقاط الملف الشخصي</h3>
+                            </div>
+                            <div class="score-gauge-container">
+                                <div class="score-gauge">
+                                    <svg viewBox="0 0 200 200">
+                                        <defs>
+                                            <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stop-color="#2563EB" />
+                                                <stop offset="100%" stop-color="#38BDF8" />
+                                            </linearGradient>
+                                        </defs>
+                                        <circle class="gauge-bg" cx="100" cy="100" r="85" />
+                                        <circle class="gauge-fill" id="gaugeCircle" cx="100" cy="100" r="85"
+                                            stroke-dasharray="534" stroke-dashoffset="534" />
+                                    </svg>
+                                    <div class="score-value">
+                                        <span class="number" id="scoreNumber">0</span>
+                                        <span class="total">/ 100</span>
+                                    </div>
+                                </div>
+                                <span class="score-status" id="scoreStatus">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Strength Breakdown -->
+                        <div class="settings-section">
+                            <div class="section-header">
+                                <i class="fas fa-layer-group"></i>
+                                <h3>تفاصيل القوة</h3>
+                            </div>
+                            <div class="strength-breakdown" id="strengthBreakdown">
+                                <!-- Filled dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Card 3: AI Suggestions -->
+                        <div class="settings-section full-width">
+                            <div class="section-header">
+                                <i class="fas fa-lightbulb"></i>
+                                <h3>اقتراحات لتحسين الملف</h3>
+                            </div>
+                            <ul class="suggestions-list" id="suggestionsList">
+                                <!-- Filled dynamically -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <button id="reAnalyzeBtn" class="btn-analyze">
+                        <i class="fas fa-redo-alt"></i>
+                        إعادة التحليل
+                    </button>
+                </div>
+            </div>
+
+            <!-- Productivity Mode Tab -->
+            <div class="tab-container hidden" id="productivity-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>وضع الإنتاجية</h2>
+                        <p>تتبع جلسات عملك، حافظ على تركيزك، وراقب إنتاجيتك اليومية.</p>
+                    </div>
+                </div>
+
+                <div class="productivity-grid">
+                    <!-- Card 1: Focus Timer -->
+                    <div class="settings-section prod-timer-card">
+                        <div class="section-header">
+                            <i class="fas fa-crosshairs"></i>
+                            <h3>جلسة التركيز</h3>
+                        </div>
+
+                        <!-- Duration Selector -->
+                        <div class="duration-selector" id="durationSelector">
+                            <button class="dur-btn active" data-minutes="25">25 دقيقة</button>
+                            <button class="dur-btn" data-minutes="50">50 دقيقة</button>
+                            <button class="dur-btn" data-minutes="0" id="customDurBtn">مخصص</button>
+                        </div>
+                        <div id="customDurInput" class="custom-dur-input hidden">
+                            <input type="number" id="customMinutes" class="form-control" min="1" max="120"
+                                placeholder="المدة بالدقائق" style="width:140px; text-align:center;">
+                        </div>
+
+                        <!-- Timer Ring -->
+                        <div class="timer-ring-container" id="timerRingContainer">
+                            <svg class="timer-ring" viewBox="0 0 200 200">
+                                <defs>
+                                    <linearGradient id="timerGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#2563EB" />
+                                        <stop offset="100%" stop-color="#38BDF8" />
+                                    </linearGradient>
+                                    <linearGradient id="breakGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#10b981" />
+                                        <stop offset="100%" stop-color="#34d399" />
+                                    </linearGradient>
+                                </defs>
+                                <circle class="timer-ring-bg" cx="100" cy="100" r="85" />
+                                <circle class="timer-ring-fill" id="timerRingFill" cx="100" cy="100" r="85"
+                                    stroke-dasharray="534" stroke-dashoffset="0" />
+                            </svg>
+                            <div class="timer-display">
+                                <span class="timer-time" id="timerTime">25:00</span>
+                                <span class="timer-label" id="timerLabel">جاهز للبدء</span>
+                            </div>
+                        </div>
+
+                        <!-- Timer Controls -->
+                        <div class="timer-controls">
+                            <button class="timer-btn start" id="timerStartBtn">
+                                <i class="fas fa-play"></i> ابدأ
+                            </button>
+                            <button class="timer-btn pause hidden" id="timerPauseBtn">
+                                <i class="fas fa-pause"></i> إيقاف
+                            </button>
+                            <button class="timer-btn stop hidden" id="timerStopBtn">
+                                <i class="fas fa-stop"></i> إنهاء
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Today's Stats -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-chart-pie"></i>
+                            <h3>إنتاجية اليوم</h3>
+                        </div>
+                        <div class="daily-stats-grid" id="dailyStatsGrid">
+                            <div class="daily-stat-card">
+                                <div class="daily-stat-icon blue"><i class="fas fa-clock"></i></div>
+                                <div class="daily-stat-info">
+                                    <span class="daily-stat-value" id="statWorkTime">0 د</span>
+                                    <span class="daily-stat-label">وقت العمل</span>
+                                </div>
+                            </div>
+                            <div class="daily-stat-card">
+                                <div class="daily-stat-icon green"><i class="fas fa-check-circle"></i></div>
+                                <div class="daily-stat-info">
+                                    <span class="daily-stat-value" id="statSessionCount">0</span>
+                                    <span class="daily-stat-label">الجلسات</span>
+                                </div>
+                            </div>
+                            <div class="daily-stat-card">
+                                <div class="daily-stat-icon purple"><i class="fas fa-brain"></i></div>
+                                <div class="daily-stat-info">
+                                    <span class="daily-stat-value" id="statAvgFocus">0 د</span>
+                                    <span class="daily-stat-label">متوسط التركيز</span>
+                                </div>
+                            </div>
+                            <div class="daily-stat-card">
+                                <div class="daily-stat-icon orange"><i class="fas fa-fire"></i></div>
+                                <div class="daily-stat-info">
+                                    <span class="daily-stat-value" id="statProductivity">0%</span>
+                                    <span class="daily-stat-label">الإنتاجية</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Productivity Progress -->
+                        <div class="prod-progress">
+                            <div class="prod-progress-label">
+                                <span>تقدم اليوم</span>
+                                <span id="prodProgressPct">0%</span>
+                            </div>
+                            <div class="strength-bar">
+                                <div class="strength-bar-fill" id="prodProgressBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Session History -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-history"></i>
+                            <h3>سجل الجلسات</h3>
+                        </div>
+                        <div class="session-list" id="sessionHistoryList">
+                            <div class="empty-state">
+                                <i class="fas fa-hourglass-start"></i>
+                                <p>لا توجد جلسات بعد. ابدأ أول جلسة تركيز!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Weekly Insights -->
+                    <div class="settings-section">
+                        <div class="section-header">
+                            <i class="fas fa-calendar-week"></i>
+                            <h3>إنتاجية الأسبوع</h3>
+                        </div>
+                        <div class="weekly-chart" id="weeklyChart">
+                            <!-- 7 bars filled dynamically -->
+                        </div>
+                        <div class="weekly-summary" id="weeklySummary">
+                            <div class="weekly-summary-item">
+                                <i class="fas fa-clock"></i>
+                                <span>إجمالي الأسبوع: <strong id="weeklyTotalHours">0 س</strong></span>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <i class="fas fa-layer-group"></i>
+                                <span>إجمالي الجلسات: <strong id="weeklyTotalSessions">0</strong></span>
+                            </div>
+                            <div class="weekly-summary-item">
+                                <i class="fas fa-chart-line"></i>
+                                <span>متوسط يومي: <strong id="weeklyAvgDaily">0 د</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Contributors Tab -->
             <div class="tab-container hidden" id="contributors-tab">
                 <div class="content-header">
@@ -445,7 +706,8 @@
                             </div>
                         </div>
                         <div class="profile-social">
-                            <a href="https://www.linkedin.com/in/mohammed-ramadan-elaraby-097245242/" target="_blank" class="social-btn linkedin">
+                            <a href="https://www.linkedin.com/in/mohammed-ramadan-elaraby-097245242/" target="_blank"
+                                class="social-btn linkedin">
                                 <i class="fab fa-linkedin"></i>
                                 LinkedIn
                             </a>
@@ -484,7 +746,10 @@
                     <div class="mission-content">
                         <i class="fas fa-heart mission-icon"></i>
                         <h3>هدفنا ورؤيتنا</h3>
-                        <p>لقد قمنا بتطوير هذه الإضافة بهدف واحد أساسي: تمكين المستقلين العرب من الوصول إلى الفرص والمشاريع على موقع مستقل بأسرع وقت ممكن. نحن نؤمن أن السرعة والدقة في التقديم هما مفتاح النجاح في عالم العمل الحر، ولذلك سخرنا تقنيات الذكاء الاصطناعي والمراقبة اللحظية لتكون رفيقك الدائم في رحلة نجاحك.</p>
+                        <p>لقد قمنا بتطوير هذه الإضافة بهدف واحد أساسي: تمكين المستقلين العرب من الوصول إلى الفرص
+                            والمشاريع على موقع مستقل بأسرع وقت ممكن. نحن نؤمن أن السرعة والدقة في التقديم هما مفتاح
+                            النجاح في عالم العمل الحر، ولذلك سخرنا تقنيات الذكاء الاصطناعي والمراقبة اللحظية لتكون رفيقك
+                            الدائم في رحلة نجاحك.</p>
                     </div>
                 </div>
             </div>
@@ -505,7 +770,9 @@
 
             <!-- Sticky Save Bar -->
             <div class="sticky-footer">
-                <span id="saveStatus" style="font-size: 14px; font-weight: 700; color: var(--success); opacity: 0; transition: opacity 0.3s;">تم حفظ التغييرات بنجاح</span>
+                <span id="saveStatus"
+                    style="font-size: 14px; font-weight: 700; color: var(--success); opacity: 0; transition: opacity 0.3s;">تم
+                    حفظ التغييرات بنجاح</span>
                 <button id="saveAllBtn" class="btn-primary">
                     <i class="fas fa-save"></i> حفظ جميع الإعدادات
                 </button>
@@ -514,7 +781,8 @@
     </div>
 
     <!-- Modals -->
-    <div id="promptModal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
+    <div id="promptModal" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);">
         <div class="settings-section" style="width: 500px; margin-bottom: 0;">
             <div class="section-header">
                 <h3 id="modalTitle">إضافة أمر جديد</h3>
@@ -529,13 +797,18 @@
                 <textarea id="promptContent" rows="8" class="form-control" placeholder="اكتب الأمر هنا..."></textarea>
             </div>
             <div style="display: flex; gap: 12px; margin-top: 24px;">
-                <button id="closeModalBtn" class="nav-item" style="background: #f1f5f9; text-align: center; justify-content: center;">إلغاء</button>
-                <button id="confirmSavePrompt" class="btn-primary" style="flex: 1; justify-content: center;">حفظ الأمر</button>
+                <button id="closeModalBtn" class="nav-item"
+                    style="background: #f1f5f9; text-align: center; justify-content: center;">إلغاء</button>
+                <button id="confirmSavePrompt" class="btn-primary" style="flex: 1; justify-content: center;">حفظ
+                    الأمر</button>
             </div>
         </div>
     </div>
 
+    <script src="profile-analyzer.js"></script>
+    <script src="productivity.js"></script>
     <script src="dashboard-bids.js"></script>
     <script src="dashboard.js"></script>
 </body>
+
 </html>
