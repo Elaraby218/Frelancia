@@ -328,6 +328,18 @@ function setupEventListeners() {
         contributorsTabBtn.addEventListener('click', loadContributors, { once: true });
     }
 
+    // Bids Tracker Tab Initialization (lazy-loaded)
+    const bidsTrackerTabBtn = document.querySelector('.nav-item[data-tab="bids-tracker"]');
+    if (bidsTrackerTabBtn) {
+        bidsTrackerTabBtn.addEventListener('click', initBidTracker, { once: true });
+    }
+
+    // Bids Tracker Refresh Button
+    const refreshBidsBtn = document.getElementById('refreshBidsBtn');
+    if (refreshBidsBtn) {
+        refreshBidsBtn.addEventListener('click', refreshBidTracker);
+    }
+
     // Save All Button
     const saveBtn = document.getElementById('saveAllBtn');
     if (saveBtn) {

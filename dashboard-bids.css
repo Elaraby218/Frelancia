@@ -1,0 +1,255 @@
+/* ==========================================
+   Frelancia Pro - Bid Tracker Styles
+   ========================================== */
+
+/* --- Header Period Badge --- */
+.bids-tracker-period {
+    font-size: 14px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #0061ff 0%, #00c6ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-right: 8px;
+}
+
+.bids-tracker-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-right: 8px;
+}
+
+/* --- Timeline Container --- */
+.bids-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+}
+
+/* --- Timeline Item --- */
+.bid-timeline-item {
+    display: flex;
+    gap: 20px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    transition: var(--transition);
+}
+
+.bid-timeline-item:last-child {
+    border-bottom: none;
+}
+
+.bid-timeline-item:hover {
+    background: #f8fafc;
+    border-radius: var(--radius-sm);
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+/* --- Timeline Marker (dot) --- */
+.bid-timeline-marker {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
+    border-radius: 50%;
+    margin-top: 6px;
+    box-shadow: 0 0 0 4px rgba(0, 97, 255, 0.1);
+    transition: var(--transition);
+}
+
+.bid-timeline-item:hover .bid-timeline-marker {
+    box-shadow: 0 0 0 6px rgba(0, 97, 255, 0.15);
+    transform: scale(1.2);
+}
+
+/* --- Timeline Content --- */
+.bid-timeline-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.bid-timeline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.bid-timeline-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    text-decoration: none;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: var(--transition);
+}
+
+.bid-timeline-title:hover {
+    text-decoration: underline;
+}
+
+/* --- Status Badges --- */
+.bid-timeline-status {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.bid-status-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.bid-status-completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.bid-status-rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* --- Meta Info --- */
+.bid-timeline-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 20px;
+    margin-bottom: 12px;
+}
+
+.bid-timeline-meta span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.bid-timeline-meta span i {
+    font-size: 11px;
+    color: var(--primary);
+    opacity: 0.7;
+}
+
+/* --- Progress Bar --- */
+.bid-timeline-progress {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.bid-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.bid-progress-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1s linear, background 2s ease;
+}
+
+.bid-countdown {
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 800;
+    font-size: 14px;
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: left;
+    direction: ltr;
+    letter-spacing: 0.5px;
+}
+
+/* --- Loading State --- */
+.bids-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+    color: var(--text-muted);
+}
+
+.bids-loading i {
+    font-size: 32px;
+    color: var(--primary);
+}
+
+.bids-loading p {
+    font-size: 15px;
+    font-weight: 600;
+}
+
+/* --- Empty State --- */
+.bids-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 12px;
+    color: var(--text-muted);
+}
+
+.bids-empty i {
+    font-size: 48px;
+    opacity: 0.3;
+}
+
+.bids-empty p {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-title);
+}
+
+.bids-empty span {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* --- Error State --- */
+.bids-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.bids-error i {
+    font-size: 48px;
+    color: var(--danger, #ef4444);
+}
+
+.bids-error p {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-title);
+}
+
+.bids-error span {
+    font-size: 13px;
+    font-weight: 600;
+    max-width: 400px;
+}

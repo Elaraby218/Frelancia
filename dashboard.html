@@ -6,6 +6,7 @@
     <title>Frelancia Pro | لوحة التحكم</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="dashboard.css">
+    <link rel="stylesheet" href="dashboard-bids.css">
 </head>
 <body>
     <div class="dashboard-container">
@@ -23,6 +24,10 @@
                 <button class="nav-item active" data-tab="overview">
                     <i class="fas fa-home"></i>
                     <span>النظرة العامة</span>
+                </button>
+                <button class="nav-item" data-tab="bids-tracker">
+                    <i class="fas fa-chart-line"></i>
+                    <span>متابعة العروض</span>
                 </button>
                 <button class="nav-item" data-tab="filters">
                     <i class="fas fa-filter"></i>
@@ -120,6 +125,73 @@
                     <div id="recentProjectsList" class="recent-list">
                         <!-- Projects will be loaded here -->
                         <p class="help-text" style="text-align: center; padding: 40px;">سيتم عرض آخر المشاريع المرصودة هنا بمجرد توفرها.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bids Tracker Tab -->
+            <div class="tab-container hidden" id="bids-tracker-tab">
+                <div class="content-header">
+                    <div class="header-title">
+                        <h2>متابعة العروض <span class="bids-tracker-period">آخر 30 يوم</span></h2>
+                        <p>تتبع عروضك المقدمة خلال آخر 30 يومًا واعرف متى يتاح لك تقديم عرض جديد.</p>
+                    </div>
+                    <button id="refreshBidsBtn" class="btn-secondary">
+                        <i class="fas fa-sync-alt"></i> تحديث
+                    </button>
+                </div>
+
+                <!-- Summary Stats -->
+                <div class="stats-grid" id="bids-summary-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-file-signature"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="value" id="bids-total-30d">-</span>
+                            <span class="label">عروض آخر 30 يوم</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="value" id="bids-available-slots">-</span>
+                            <span class="label">عروض متاحة الآن</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="value" id="bids-next-available" style="font-size: 16px;">-</span>
+                            <span class="label">أقرب عرض سيتاح</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="value" id="bids-today-count">-</span>
+                            <span class="label">عروض اليوم</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bids Timeline -->
+                <div class="settings-section">
+                    <div class="section-header">
+                        <i class="fas fa-stream"></i>
+                        <h3>جدول العروض <span class="bids-tracker-sub">العد التنازلي حتى انتهاء فترة الـ 30 يوم</span></h3>
+                    </div>
+                    <div id="bidsTimelineList" class="bids-timeline">
+                        <div class="bids-loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>جاري تحميل بيانات العروض...</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -452,6 +524,7 @@
         </div>
     </div>
 
+    <script src="dashboard-bids.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>
