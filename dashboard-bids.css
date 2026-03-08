@@ -6,7 +6,7 @@
 .bids-tracker-period {
     font-size: 14px;
     font-weight: 700;
-    background: linear-gradient(135deg, #0061ff 0%, #00c6ff 100%);
+    background: var(--primary-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -24,36 +24,36 @@
 .bid-status-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
+    gap: 16px;
     margin-bottom: 8px;
 }
 
 .bid-status-card {
     background: var(--card);
-    border-radius: var(--radius-md);
-    padding: 20px 24px;
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    box-shadow: var(--shadow-premium);
-    border: 1px solid var(--border);
+    gap: 14px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border-light);
     transition: var(--transition);
 }
 
 .bid-status-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 .bid-status-icon {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
     border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .bid-status-info {
@@ -63,21 +63,21 @@
 
 .bid-status-count {
     display: block;
-    font-size: 24px;
-    font-weight: 900;
+    font-size: 22px;
+    font-weight: 800;
     color: var(--text-title);
     line-height: 1.2;
 }
 
 .bid-status-label {
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 600;
     color: var(--text-muted);
 }
 
 .bid-status-pct {
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 700;
     direction: ltr;
 }
 
@@ -92,9 +92,9 @@
 /* --- Timeline Item --- */
 .bid-timeline-item {
     display: flex;
-    gap: 20px;
-    padding: 20px 0;
-    border-bottom: 1px solid var(--border);
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-light);
     position: relative;
     transition: var(--transition);
 }
@@ -104,26 +104,26 @@
 }
 
 .bid-timeline-item:hover {
-    background: #f8fafc;
+    background: var(--primary-soft);
     border-radius: var(--radius-sm);
     padding-left: 12px;
     padding-right: 12px;
 }
 
-/* --- Timeline Marker (dot) --- */
+/* --- Timeline Marker --- */
 .bid-timeline-marker {
-    width: 14px;
-    height: 14px;
-    min-width: 14px;
+    width: 12px;
+    height: 12px;
+    min-width: 12px;
     border-radius: 50%;
     margin-top: 6px;
-    box-shadow: 0 0 0 4px rgba(0, 97, 255, 0.1);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     transition: var(--transition);
 }
 
 .bid-timeline-item:hover .bid-timeline-marker {
-    box-shadow: 0 0 0 6px rgba(0, 97, 255, 0.15);
-    transform: scale(1.2);
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.15);
+    transform: scale(1.15);
 }
 
 /* --- Timeline Content --- */
@@ -137,12 +137,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     flex-wrap: wrap;
 }
 
 .bid-timeline-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: var(--primary);
     text-decoration: none;
@@ -187,8 +187,8 @@
 .bid-timeline-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px 20px;
-    margin-bottom: 12px;
+    gap: 6px 18px;
+    margin-bottom: 10px;
 }
 
 .bid-timeline-meta span {
@@ -203,34 +203,34 @@
 .bid-timeline-meta span i {
     font-size: 11px;
     color: var(--primary);
-    opacity: 0.7;
+    opacity: 0.65;
 }
 
 /* --- Progress Bar --- */
 .bid-timeline-progress {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
 .bid-progress-bar {
     flex: 1;
-    height: 8px;
-    background: #e2e8f0;
-    border-radius: 10px;
+    height: 6px;
+    background: var(--border-light);
+    border-radius: 6px;
     overflow: hidden;
 }
 
 .bid-progress-fill {
     height: 100%;
-    border-radius: 10px;
+    border-radius: 6px;
     transition: width 1s linear, background 2s ease;
 }
 
 .bid-countdown {
     font-family: 'Courier New', Courier, monospace;
     font-weight: 800;
-    font-size: 14px;
+    font-size: 13px;
     white-space: nowrap;
     min-width: 100px;
     text-align: left;
@@ -244,18 +244,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    gap: 16px;
+    padding: 48px 20px;
+    gap: 14px;
     color: var(--text-muted);
 }
 
 .bids-loading i {
-    font-size: 32px;
+    font-size: 28px;
     color: var(--primary);
 }
 
 .bids-loading p {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
 }
 
@@ -265,18 +265,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    gap: 12px;
+    padding: 48px 20px;
+    gap: 10px;
     color: var(--text-muted);
 }
 
 .bids-empty i {
-    font-size: 48px;
-    opacity: 0.3;
+    font-size: 40px;
+    opacity: 0.2;
 }
 
 .bids-empty p {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text-title);
 }
@@ -292,19 +292,19 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
-    gap: 12px;
+    padding: 48px 20px;
+    gap: 10px;
     color: var(--text-muted);
     text-align: center;
 }
 
 .bids-error i {
-    font-size: 48px;
-    color: var(--danger, #ef4444);
+    font-size: 40px;
+    color: var(--danger);
 }
 
 .bids-error p {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text-title);
 }

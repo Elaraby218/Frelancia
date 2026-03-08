@@ -932,6 +932,26 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  // Productivity Mode Notifications
+  if (message.type === 'SHOW_PRODUCTIVITY_NOTIFICATION') {
+    chrome.notifications.create('prod_' + Date.now(), {
+      type: 'basic',
+      iconUrl: 'icons/icon128.png',
+      title: message.title,
+      message: message.body,
+      priority: 2
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  // Productivity Mode Sound
+  if (message.type === 'PLAY_NOTIFICATION_SOUND') {
+    playSound();
+    sendResponse({ success: true });
+    return true;
+  }
+
   // Clear history
   if (message.action === 'clearHistory') {
     chrome.storage.local.set({
