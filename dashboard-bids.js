@@ -154,7 +154,6 @@ function computeBidTrackerStats(allBids) {
     const bidsInRange = [];
     const bidsToday = [];
     const byStatus = {};
-    let availableSlots = 0;
 
     for (const bid of allBids) {
         const published = parseBidDatetime(bid.publishedDatetime);
@@ -179,10 +178,6 @@ function computeBidTrackerStats(allBids) {
             });
         }
 
-        if (ageMs > THIRTY_DAYS_MS) {
-            availableSlots++;
-        }
-
         if (ageMs <= ONE_DAY_MS) {
             bidsToday.push(bid);
         }
@@ -194,7 +189,6 @@ function computeBidTrackerStats(allBids) {
     return {
         total30d: bidsInRange.length,
         todayCount: bidsToday.length,
-        availableSlots,
         nextAvailable,
         byStatus,
         bids: bidsInRange,
@@ -223,25 +217,13 @@ function normalizeStatusLabel(rawStatus) {
  */
 async function loadBidTrackerData() {
     try {
-        const allBids = [];
-        const firstPage = await fetchBidTrackerPage(1);
-        const firstBids = processBidTrackerPage(firstPage);
-        allBids.push(...firstBids);
-
-        const totalPages = Math.ceil(firstPage.count / ITEMS_PER_PAGE);
-
-        for (let page = 2; page <= totalPages; page++) {
-            try {
-                const pageData = await fetchBidTrackerPage(page);
-                const pageBids = processBidTrackerPage(pageData);
-                allBids.push(...pageBids);
-            } catch (pageError) {
-                console.warn(`Bid tracker: Page ${page} failed:`, pageError.message);
-            }
-        }
+        const [homepageStats, allBids] = await Promise.all([
+            fetchMostaqlHomepageStats(),
+            fetchAllBidPages(),
+        ]);
 
         const stats = computeBidTrackerStats(allBids);
-        renderBidTrackerSummary(stats);
+        renderBidTrackerSummary(stats, homepageStats);
         renderBidStatusCards(stats.byStatus, stats.total30d);
         renderBidTimeline(stats.bids);
         startBidTrackerCountdowns();
@@ -251,21 +233,127 @@ async function loadBidTrackerData() {
     }
 }
 
+/**
+ * Fetches all bid pages from the API.
+ * @returns {Promise<Array<Object>>} - All parsed bid objects
+ */
+async function fetchAllBidPages() {
+    const allBids = [];
+    const firstPage = await fetchBidTrackerPage(1);
+    const firstBids = processBidTrackerPage(firstPage);
+    allBids.push(...firstBids);
+
+    const totalPages = Math.ceil(firstPage.count / ITEMS_PER_PAGE);
+
+    for (let page = 2; page <= totalPages; page++) {
+        try {
+            const pageData = await fetchBidTrackerPage(page);
+            const pageBids = processBidTrackerPage(pageData);
+            allBids.push(...pageBids);
+        } catch (pageError) {
+            console.warn(`Bid tracker: Page ${page} failed:`, pageError.message);
+        }
+    }
+
+    return allBids;
+}
+
+/**
+ * Scrapes the Mostaql homepage to get real available bids, plan usage, and additional bids.
+ * @returns {Promise<Object>} - { available, planUsed, planTotal, additional }
+ */
+async function fetchMostaqlHomepageStats() {
+    const defaults = { available: '-', planUsed: '-', planTotal: '-', additional: '-' };
+
+    try {
+        const response = await fetch('https://mostaql.com/', {
+            credentials: 'include',
+            headers: { 'Accept': 'text/html' },
+        });
+        if (!response.ok) return defaults;
+
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+
+        return parseHomepageBidStats(doc, defaults);
+    } catch (error) {
+        console.warn('Homepage stats fetch failed:', error.message);
+        return defaults;
+    }
+}
+
+/**
+ * Parses bid stats from the Mostaql homepage DOM.
+ * @param {Document} doc - Parsed homepage document
+ * @param {Object} defaults - Default values on parse failure
+ * @returns {Object} - Parsed stats
+ */
+function parseHomepageBidStats(doc, defaults) {
+    const result = { ...defaults };
+
+    // Available bids: the <span class="text-alpha"> inside the "عروض متاحة" section
+    const availableLink = doc.querySelector('a[href*="dashboard/bids"] .text-alpha');
+    if (availableLink) {
+        result.available = parseInt(availableLink.textContent.trim(), 10) || 0;
+    }
+
+    // Plan and additional: find progress bars
+    const progressBars = doc.querySelectorAll('.progress__bar');
+    progressBars.forEach(bar => {
+        const labelEl = bar.querySelector('.pull-right');
+        if (!labelEl) return;
+        const label = labelEl.textContent.trim();
+
+        if (label.includes('عروض من الخطة')) {
+            const valueEl = bar.querySelector('.pull-left span, .pull-left');
+            if (valueEl) {
+                const parts = valueEl.textContent.trim().split('/');
+                if (parts.length === 2) {
+                    result.planTotal = parseInt(parts[0].trim(), 10) || 0;
+                    result.planUsed = parseInt(parts[1].trim(), 10) || 0;
+                }
+            }
+        }
+
+        if (label.includes('عروض') && label.includes('إضافية')) {
+            const valueEl = bar.querySelector('.pull-left');
+            if (valueEl) {
+                result.additional = parseInt(valueEl.textContent.trim(), 10) || 0;
+            }
+        }
+    });
+
+    return result;
+}
+
 // --- Rendering ---
 
 /**
  * Renders the summary stats cards at the top.
  * @param {Object} stats - Computed tracker stats
  */
-function renderBidTrackerSummary(stats) {
+function renderBidTrackerSummary(stats, homepageStats) {
     const totalEl = document.getElementById('bids-total-30d');
     const availableEl = document.getElementById('bids-available-slots');
+    const planEl = document.getElementById('bids-plan-usage');
+    const additionalEl = document.getElementById('bids-additional');
     const nextEl = document.getElementById('bids-next-available');
     const todayEl = document.getElementById('bids-today-count');
 
     if (totalEl) totalEl.textContent = stats.total30d;
-    if (availableEl) availableEl.textContent = stats.availableSlots;
     if (todayEl) todayEl.textContent = stats.todayCount;
+
+    // Real data from Mostaql homepage
+    if (availableEl) availableEl.textContent = homepageStats.available;
+    if (additionalEl) additionalEl.textContent = homepageStats.additional;
+    if (planEl) {
+        const used = homepageStats.planUsed;
+        const total = homepageStats.planTotal;
+        planEl.textContent = (used !== '-' && total !== '-')
+            ? `${used} / ${total}`
+            : '-';
+    }
 
     if (nextEl && stats.nextAvailable) {
         const hoursLeft = Math.floor(stats.nextAvailable.msLeft / (1000 * 60 * 60));
@@ -551,7 +639,8 @@ function showBidErrorState(message) {
  * Resets the summary stat cards to a loading state.
  */
 function resetBidSummaryCards() {
-    ['bids-total-30d', 'bids-available-slots', 'bids-next-available', 'bids-today-count']
+    ['bids-total-30d', 'bids-available-slots', 'bids-plan-usage',
+     'bids-additional', 'bids-next-available', 'bids-today-count']
         .forEach(id => {
             const el = document.getElementById(id);
             if (el) el.textContent = '-';
