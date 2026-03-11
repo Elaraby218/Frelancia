@@ -23,7 +23,7 @@
   async function fetchMostaqlProfile() {
     try {
       // First try to get the username from storage
-      const data = await chrome.storage.local.get(['mostaqlUsername']);
+      const data = await FrelanciaUtils.getStorage(['mostaqlUsername']);
       let profileUrl = '';
 
       if (data.mostaqlUsername) {
@@ -39,10 +39,7 @@
         }
       }
 
-      if (!profileUrl) {
-        // Return demo data when we can't find a profile
-        return getDemoProfileData();
-      }
+      if (!profileUrl) return getDemoProfileData();
 
       const response = await fetch(profileUrl);
       if (!response.ok) throw new Error('Failed to fetch profile');
@@ -397,8 +394,8 @@
   // Render Functions
   // ==========================================
   function animateScore(target) {
-    const el = document.getElementById('scoreNumber');
-    const circle = document.getElementById('gaugeCircle');
+    const el = FrelanciaUtils.$('scoreNumber');
+    const circle = FrelanciaUtils.$('gaugeCircle');
     if (!el || !circle) return;
 
     let current = 0;
@@ -427,7 +424,7 @@
   }
 
   function renderStrengthBreakdown(categories) {
-    const container = document.getElementById('strengthBreakdown');
+    const container = FrelanciaUtils.$('strengthBreakdown');
     if (!container) return;
 
     const items = [
@@ -459,7 +456,7 @@
   }
 
   function renderSuggestions(suggestions) {
-    const list = document.getElementById('suggestionsList');
+    const list = FrelanciaUtils.$('suggestionsList');
     if (!list) return;
 
     list.innerHTML = suggestions.map(s => {
@@ -478,14 +475,14 @@
   }
 
   function renderResults(result) {
-    const placeholder = document.getElementById('analyzerPlaceholder');
-    const results = document.getElementById('analyzerResults');
-    if (placeholder) placeholder.classList.add('hidden');
-    if (results) results.classList.remove('hidden');
+    const placeholder = FrelanciaUtils.$('analyzerPlaceholder');
+    const results = FrelanciaUtils.$('analyzerResults');
+    FrelanciaUtils.toggleHidden(placeholder, true);
+    FrelanciaUtils.toggleHidden(results, false);
 
     // Update status label
     const statusInfo = getStatusInfo(result.finalScore);
-    const statusEl = document.getElementById('scoreStatus');
+    const statusEl = FrelanciaUtils.$('scoreStatus');
     if (statusEl) {
       statusEl.textContent = statusInfo.label;
       statusEl.className = 'score-status ' + statusInfo.cssClass;
@@ -518,7 +515,7 @@
       const result = analyzeProfile(profileData);
 
       // Cache results
-      chrome.storage.local.set({ profileAnalysisResult: result });
+      FrelanciaUtils.setStorage({ profileAnalysisResult: result });
 
       renderResults(result);
     } catch (err) {
@@ -536,19 +533,19 @@
   // ==========================================
   function init() {
     // Start analysis button
-    const startBtn = document.getElementById('startAnalysisBtn');
+    const startBtn = FrelanciaUtils.$('startAnalysisBtn');
     if (startBtn) {
       startBtn.addEventListener('click', () => runAnalysis(startBtn));
     }
 
     // Re-analyze button
-    const reAnalyzeBtn = document.getElementById('reAnalyzeBtn');
+    const reAnalyzeBtn = FrelanciaUtils.$('reAnalyzeBtn');
     if (reAnalyzeBtn) {
       reAnalyzeBtn.addEventListener('click', () => runAnalysis(reAnalyzeBtn));
     }
 
     // Load cached results if available
-    chrome.storage.local.get(['profileAnalysisResult'], (data) => {
+    FrelanciaUtils.getStorage(['profileAnalysisResult']).then((data) => {
       if (data.profileAnalysisResult) {
         renderResults(data.profileAnalysisResult);
       }

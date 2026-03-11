@@ -24,10 +24,8 @@
     let sessionStartTime = null;
     let pausedAt = null;
 
-    // ==========================================
-    // DOM References
-    // ==========================================
-    function $(id) { return document.getElementById(id); }
+    // --- DOM References ---
+    // (Using FrelanciaUtils.$)
 
     // ==========================================
     // Timer Logic
@@ -44,8 +42,8 @@
         }
 
         // Fresh start
-        const customInput = $('customMinutes');
-        const durSelector = $('durationSelector');
+        const customInput = FrelanciaUtils.$('customMinutes');
+        const durSelector = FrelanciaUtils.$('durationSelector');
         const activeBtn = durSelector.querySelector('.dur-btn.active');
         const mins = parseInt(activeBtn?.dataset.minutes || '25');
 
@@ -67,7 +65,7 @@
         updateControls();
         setTimerLabel('جلسة تركيز', false);
 
-        const ringFill = $('timerRingFill');
+        const ringFill = FrelanciaUtils.$('timerRingFill');
         if (ringFill) ringFill.classList.remove('break-mode');
 
         intervalId = setInterval(tick, 1000);
@@ -106,8 +104,8 @@
         pausedAt = null;
 
         updateTimerDisplay();
-        $('timerRingFill').style.strokeDashoffset = '0';
-        $('timerRingFill').classList.remove('break-mode');
+        FrelanciaUtils.$('timerRingFill').style.strokeDashoffset = '0';
+        FrelanciaUtils.$('timerRingFill').classList.remove('break-mode');
         setTimerLabel('جاهز للبدء', false);
         updateControls();
         refreshStats();
@@ -143,7 +141,7 @@
         remainingSeconds = totalSeconds;
         sessionStartTime = null;
 
-        const ringFill = $('timerRingFill');
+        const ringFill = FrelanciaUtils.$('timerRingFill');
         if (ringFill) ringFill.classList.add('break-mode');
 
         setTimerLabel('وقت الاستراحة', true);
@@ -160,30 +158,30 @@
     function updateTimerDisplay() {
         const mins = Math.floor(remainingSeconds / 60);
         const secs = remainingSeconds % 60;
-        const el = $('timerTime');
+        const el = FrelanciaUtils.$('timerTime');
         if (el) el.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }
 
     function updateRing() {
         const progress = 1 - (remainingSeconds / totalSeconds);
         const offset = CIRCUMFERENCE * (1 - progress);
-        const ringFill = $('timerRingFill');
+        const ringFill = FrelanciaUtils.$('timerRingFill');
         if (ringFill) ringFill.style.strokeDashoffset = offset;
     }
 
     function setTimerLabel(text, isBreak) {
-        const el = $('timerLabel');
+        const el = FrelanciaUtils.$('timerLabel');
         if (!el) return;
         el.textContent = text;
         el.className = 'timer-label' + (isBreak ? ' break-label' : '');
     }
 
     function updateControls() {
-        const startBtn = $('timerStartBtn');
-        const pauseBtn = $('timerPauseBtn');
-        const stopBtn = $('timerStopBtn');
-        const durSelector = $('durationSelector');
-        const customInput = $('customDurInput');
+        const startBtn = FrelanciaUtils.$('timerStartBtn');
+        const pauseBtn = FrelanciaUtils.$('timerPauseBtn');
+        const stopBtn = FrelanciaUtils.$('timerStopBtn');
+        const durSelector = FrelanciaUtils.$('durationSelector');
+        const customInput = FrelanciaUtils.$('customDurInput');
 
         if (!startBtn || !pauseBtn || !stopBtn) return;
 
@@ -239,21 +237,21 @@
             date: new Date().toISOString().split('T')[0]
         };
 
-        chrome.storage.local.get([STORAGE_KEY], (data) => {
+        FrelanciaUtils.getStorage([STORAGE_KEY]).then((data) => {
             const sessions = data[STORAGE_KEY] || [];
             sessions.push(session);
 
             // Keep last 200 sessions max
             if (sessions.length > 200) sessions.splice(0, sessions.length - 200);
 
-            chrome.storage.local.set({ [STORAGE_KEY]: sessions }, () => {
+            FrelanciaUtils.setStorage({ [STORAGE_KEY]: sessions }).then(() => {
                 refreshStats();
             });
         });
     }
 
     function getSessions(callback) {
-        chrome.storage.local.get([STORAGE_KEY], (data) => {
+        FrelanciaUtils.getStorage([STORAGE_KEY]).then((data) => {
             callback(data[STORAGE_KEY] || []);
         });
     }
@@ -279,12 +277,12 @@
             const productivityPct = Math.min(100, Math.round((totalMinutes / DAILY_GOAL_MINUTES) * 100));
 
             // Update DOM
-            const elWorkTime = $('statWorkTime');
-            const elCount = $('statSessionCount');
-            const elAvg = $('statAvgFocus');
-            const elProd = $('statProductivity');
-            const elProgressPct = $('prodProgressPct');
-            const elProgressBar = $('prodProgressBar');
+            const elWorkTime = FrelanciaUtils.$('statWorkTime');
+            const elCount = FrelanciaUtils.$('statSessionCount');
+            const elAvg = FrelanciaUtils.$('statAvgFocus');
+            const elProd = FrelanciaUtils.$('statProductivity');
+            const elProgressPct = FrelanciaUtils.$('prodProgressPct');
+            const elProgressBar = FrelanciaUtils.$('prodProgressBar');
 
             if (elWorkTime) elWorkTime.textContent = workTimeText;
             if (elCount) elCount.textContent = sessionCount;
@@ -305,7 +303,7 @@
     // Session History
     // ==========================================
     function renderSessionHistory(sessions) {
-        const list = $('sessionHistoryList');
+        const list = FrelanciaUtils.$('sessionHistoryList');
         if (!list) return;
 
         if (sessions.length === 0) {
@@ -323,8 +321,8 @@
         list.innerHTML = recent.map(s => {
             const startTime = new Date(s.start);
             const endTime = new Date(s.end);
-            const startStr = formatTime(startTime);
-            const endStr = formatTime(endTime);
+            const startStr = FrelanciaUtils.formatTime(startTime);
+            const endStr = FrelanciaUtils.formatTime(endTime);
 
             return `
         <div class="session-list-item">
@@ -335,15 +333,13 @@
         }).join('');
     }
 
-    function formatTime(date) {
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    }
+
 
     // ==========================================
     // Weekly Insights
     // ==========================================
     function renderWeeklyInsights(allSessions) {
-        const chart = $('weeklyChart');
+        const chart = FrelanciaUtils.$('weeklyChart');
         if (!chart) return;
 
         // Get last 7 days
@@ -392,9 +388,9 @@
         const totalHrs = (totalMins / 60).toFixed(1);
         const avgDailyStr = avgDaily > 60 ? `${Math.floor(avgDaily / 60)} س ${avgDaily % 60} د` : `${avgDaily} د`;
 
-        const elTotalHrs = $('weeklyTotalHours');
-        const elTotalSess = $('weeklyTotalSessions');
-        const elAvgDaily = $('weeklyAvgDaily');
+        const elTotalHrs = FrelanciaUtils.$('weeklyTotalHours');
+        const elTotalSess = FrelanciaUtils.$('weeklyTotalSessions');
+        const elAvgDaily = FrelanciaUtils.$('weeklyAvgDaily');
 
         if (elTotalHrs) elTotalHrs.textContent = `${totalHrs} ساعة`;
         if (elTotalSess) elTotalSess.textContent = totalSess;
@@ -455,8 +451,8 @@
     // Duration Selector
     // ==========================================
     function setupDurationSelector() {
-        const selector = $('durationSelector');
-        const customInput = $('customDurInput');
+        const selector = FrelanciaUtils.$('durationSelector');
+        const customInput = FrelanciaUtils.$('customDurInput');
         if (!selector) return;
 
         selector.addEventListener('click', (e) => {
@@ -470,20 +466,20 @@
 
             if (mins === 0) {
                 // Custom
-                if (customInput) customInput.classList.remove('hidden');
+                FrelanciaUtils.toggleHidden(customInput, false);
                 return;
             }
 
-            if (customInput) customInput.classList.add('hidden');
+            FrelanciaUtils.toggleHidden(customInput, true);
             focusDuration = mins;
             totalSeconds = mins * 60;
             remainingSeconds = totalSeconds;
             updateTimerDisplay();
-            $('timerRingFill').style.strokeDashoffset = '0';
+            FrelanciaUtils.$('timerRingFill').style.strokeDashoffset = '0';
         });
 
         // Custom input change
-        const customMins = $('customMinutes');
+        const customMins = FrelanciaUtils.$('customMinutes');
         if (customMins) {
             customMins.addEventListener('input', () => {
                 const val = parseInt(customMins.value);
@@ -492,7 +488,7 @@
                     totalSeconds = val * 60;
                     remainingSeconds = totalSeconds;
                     updateTimerDisplay();
-                    $('timerRingFill').style.strokeDashoffset = '0';
+                    FrelanciaUtils.$('timerRingFill').style.strokeDashoffset = '0';
                 }
             });
         }
@@ -503,9 +499,9 @@
     // ==========================================
     function init() {
         // Timer controls
-        const startBtn = $('timerStartBtn');
-        const pauseBtn = $('timerPauseBtn');
-        const stopBtn = $('timerStopBtn');
+        const startBtn = FrelanciaUtils.$('timerStartBtn');
+        const pauseBtn = FrelanciaUtils.$('timerPauseBtn');
+        const stopBtn = FrelanciaUtils.$('timerStopBtn');
 
         if (startBtn) startBtn.addEventListener('click', startFocus);
         if (pauseBtn) pauseBtn.addEventListener('click', pauseTimer);

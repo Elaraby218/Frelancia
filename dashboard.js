@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // --- Connection Status ---
 function loadConnectionStatus() {
-    chrome.storage.local.get(['signalRConnected', 'signalRFallbackActive', 'settings'], (data) => {
-        const statusEl = document.getElementById('stat-connection');
-        const iconEl = document.getElementById('connection-status-icon');
+    FrelanciaUtils.getStorage(['signalRConnected', 'signalRFallbackActive', 'settings']).then((data) => {
+        const statusEl = FrelanciaUtils.$('stat-connection');
+        const iconEl = FrelanciaUtils.$('connection-status-icon');
         if (!statusEl || !iconEl) return;
 
         const mode = (data.settings || {}).notificationMode || 'auto';
@@ -48,15 +48,12 @@ function setupTabSwitching() {
             if (!tabId) return;
 
             // Update Active Nav
-            navItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
+            navItems.forEach(i => i.classList.toggle('active', i === item));
 
             // Update Active Tab
             tabContainers.forEach(container => {
-                container.classList.add('hidden');
-                if (container.id === `${tabId}-tab`) {
-                    container.classList.remove('hidden');
-                }
+                const isActive = container.id === `${tabId}-tab`;
+                FrelanciaUtils.toggleHidden(container, !isActive);
             });
         });
     });
@@ -64,38 +61,30 @@ function setupTabSwitching() {
 
 // --- Data Loading ---
 function loadData() {
-    chrome.storage.local.get(['settings', 'stats', 'prompts', 'proposalTemplate', 'seenJobs', 'recentJobs'], (data) => {
+    FrelanciaUtils.getStorage(['settings', 'stats', 'prompts', 'proposalTemplate', 'seenJobs', 'recentJobs', 'trackedProjects']).then((data) => {
         // High Level Stats
         if (data.stats) {
             const todayCount = parseInt(data.stats.todayCount);
-            document.getElementById('stat-today').textContent = isNaN(todayCount) ? 0 : todayCount;
-            
-            const lastTime = data.stats.lastCheck ? new Date(data.stats.lastCheck).toLocaleTimeString('ar-EG') : '-';
-            document.getElementById('stat-last-time').textContent = lastTime;
+            FrelanciaUtils.$('stat-today').textContent = isNaN(todayCount) ? 0 : todayCount;
+            FrelanciaUtils.$('stat-last-time').textContent = data.stats.lastCheck ? new Date(data.stats.lastCheck).toLocaleTimeString('ar-EG') : '-';
         }
         
         if (data.seenJobs) {
-            const totalSeen = Array.isArray(data.seenJobs) ? data.seenJobs.length : 0;
-            document.getElementById('stat-total').textContent = totalSeen;
+            FrelanciaUtils.$('stat-total').textContent = Array.isArray(data.seenJobs) ? data.seenJobs.length : 0;
         }
         
-        // Render Project List using full objects
-        // Tracked (watched) projects panel
-        chrome.storage.local.get(['trackedProjects'], (td) => {
-            const tracked = td.trackedProjects || {};
-            const trackedList = Object.values(tracked)
-                .sort((a, b) => (b.lastChecked || '').localeCompare(a.lastChecked || ''));
-            renderTrackedProjects(trackedList);
-        });
+        // Tracked Projects
+        const tracked = data.trackedProjects || {};
+        const trackedList = Object.values(tracked).sort((a, b) => (b.lastChecked || '').localeCompare(a.lastChecked || ''));
+        renderTrackedProjects(trackedList);
 
         // Settings / Filters
         const s = data.settings || {};
         const setVal = (id, val) => {
-            const el = document.getElementById(id);
-            if (el) {
-                if (el.type === 'checkbox') el.checked = val;
-                else el.value = val || '';
-            }
+            const el = FrelanciaUtils.$(id);
+            if (!el) return;
+            if (el.type === 'checkbox') el.checked = val;
+            else el.value = val !== undefined ? val : '';
         };
 
         setVal('keywordsInclude', s.keywordsInclude);
@@ -115,7 +104,7 @@ function loadData() {
         setVal('notificationMode', s.notificationMode || 'auto');
 
         // Proposals
-        document.getElementById('proposalTemplate').value = data.proposalTemplate || '';
+        FrelanciaUtils.$('proposalTemplate').value = data.proposalTemplate || '';
 
         // Prompts
         renderPrompts(data.prompts || []);
@@ -237,9 +226,9 @@ function setupAutofillListeners() {
         const durationText = btn.dataset.duration;
         const url = btn.href;
 
-        chrome.storage.local.get(['proposalTemplate'], (data) => {
-            const amount = parseMinBudgetValue(budgetText);
-            const duration = parseDurationDays(durationText);
+        FrelanciaUtils.getStorage(['proposalTemplate']).then((data) => {
+            const amount = FrelanciaUtils.parseMinBudgetValue(budgetText);
+            const duration = FrelanciaUtils.parseDurationDays(durationText);
             
             const autofillData = {
                 projectId,
@@ -249,7 +238,7 @@ function setupAutofillListeners() {
                 timestamp: Date.now()
             };
 
-            chrome.storage.local.set({ 'mostaql_pending_autofill': autofillData }, () => {
+            FrelanciaUtils.setStorage({ 'mostaql_pending_autofill': autofillData }).then(() => {
                 const urlWithFlag = url + (url.includes('?') ? '&' : '?') + 'mostaql_autofill=true';
                 window.open(urlWithFlag, '_blank');
             });
@@ -258,21 +247,8 @@ function setupAutofillListeners() {
     list.dataset.listenerSet = "true";
 }
 
-function parseMinBudgetValue(budgetText) {
-    if (!budgetText || budgetText === 'غير محدد') return 0;
-    const matches = budgetText.replace(/,/g, '').match(/\d+(\.\d+)?/g);
-    if (!matches) return 0;
-    const values = matches.map(m => parseFloat(m));
-    return Math.min(...values);
-}
+// --- Utilities (Moved to FrelanciaUtils) ---
 
-function parseDurationDays(durationText) {
-    if (!durationText) return 0;
-    const match = durationText.match(/\d+/);
-    if (match) return parseInt(match[0]);
-    if (durationText.includes("يوم واحد")) return 1;
-    return 0;
-}
 
 function renderPrompts(prompts) {
     const list = document.getElementById('promptsList');
@@ -372,13 +348,13 @@ function setupEventListeners() {
     }
 
     // Auto-save Status Toggle
-    const systemToggle = document.getElementById('systemToggle');
+    const systemToggle = FrelanciaUtils.$('systemToggle');
     if (systemToggle) {
         systemToggle.addEventListener('change', () => {
-            chrome.storage.local.get(['settings'], (data) => {
+            FrelanciaUtils.getStorage(['settings']).then((data) => {
                 const s = data.settings || {};
                 s.systemEnabled = systemToggle.checked;
-                chrome.storage.local.set({ settings: s }, () => {
+                FrelanciaUtils.setStorage({ settings: s }).then(() => {
                     showSaveStatus();
                 });
             });
@@ -389,7 +365,7 @@ function setupEventListeners() {
 // --- Save Logic ---
 function saveAllSettings() {
     const getVal = (id) => {
-        const el = document.getElementById(id);
+        const el = FrelanciaUtils.$(id);
         return el ? (el.type === 'checkbox' ? el.checked : el.value) : null;
     };
 
@@ -411,38 +387,34 @@ function saveAllSettings() {
         notificationMode: getVal('notificationMode') || 'auto'
     };
 
-    const proposalTemplate = document.getElementById('proposalTemplate').value;
+    const proposalTemplate = FrelanciaUtils.$('proposalTemplate').value;
 
-    chrome.storage.local.set({ settings, proposalTemplate }, () => {
+    FrelanciaUtils.setStorage({ settings, proposalTemplate }).then(() => {
         showSaveStatus();
-        // Update alarm in background
         chrome.runtime.sendMessage({ action: 'updateAlarm', interval: settings.interval });
     });
 }
 
 function showSaveStatus() {
-    const status = document.getElementById('saveStatus');
+    const status = FrelanciaUtils.$('saveStatus');
     status.style.opacity = '1';
-    setTimeout(() => {
-        status.style.opacity = '0';
-    }, 3000);
+    setTimeout(() => { status.style.opacity = '0'; }, 3000);
 }
 
 // --- Prompt CRUD ---
 function editPrompt(index) {
-    chrome.storage.local.get(['prompts'], (data) => {
+    FrelanciaUtils.getStorage(['prompts']).then((data) => {
         const prompts = data.prompts || [];
-        const p = prompts[index];
-        if (p) openPromptModal(p, index);
+        if (prompts[index]) openPromptModal(prompts[index], index);
     });
 }
 
 function deletePrompt(index) {
     if (!confirm('هل أنت متأكد من حذف هذا الأمر؟')) return;
-    chrome.storage.local.get(['prompts'], (data) => {
+    FrelanciaUtils.getStorage(['prompts']).then((data) => {
         const prompts = data.prompts || [];
         prompts.splice(index, 1);
-        chrome.storage.local.set({ prompts }, () => {
+        FrelanciaUtils.setStorage({ prompts }).then(() => {
             renderPrompts(prompts);
             showSaveStatus();
         });
@@ -450,37 +422,37 @@ function deletePrompt(index) {
 }
 
 function openPromptModal(prompt = null, index = -1) {
-    const modal = document.getElementById('promptModal');
-    const title = document.getElementById('promptTitle');
-    const content = document.getElementById('promptContent');
-    const idField = document.getElementById('promptId');
+    const modal = FrelanciaUtils.$('promptModal');
+    const title = FrelanciaUtils.$('promptTitle');
+    const content = FrelanciaUtils.$('promptContent');
+    const idField = FrelanciaUtils.$('promptId');
 
     if (prompt) {
-        document.getElementById('modalTitle').textContent = 'تعديل الأمر';
+        FrelanciaUtils.$('modalTitle').textContent = 'تعديل الأمر';
         title.value = prompt.title;
         content.value = prompt.content;
         idField.value = index;
     } else {
-        document.getElementById('modalTitle').textContent = 'إضافة أمر جديد';
+        FrelanciaUtils.$('modalTitle').textContent = 'إضافة أمر جديد';
         title.value = '';
         content.value = '';
         idField.value = -1;
     }
 
-    modal.classList.remove('hidden');
+    FrelanciaUtils.toggleHidden(modal, false);
 }
 
 function savePromptFromModal() {
-    const title = document.getElementById('promptTitle').value.trim();
-    const content = document.getElementById('promptContent').value.trim();
-    const index = parseInt(document.getElementById('promptId').value);
+    const title = FrelanciaUtils.$('promptTitle').value.trim();
+    const content = FrelanciaUtils.$('promptContent').value.trim();
+    const index = parseInt(FrelanciaUtils.$('promptId').value);
 
     if (!title || !content) {
         alert('يرجى ملء جميع الحقول');
         return;
     }
 
-    chrome.storage.local.get(['prompts'], (data) => {
+    FrelanciaUtils.getStorage(['prompts']).then((data) => {
         const prompts = data.prompts || [];
         if (index >= 0) {
             prompts[index] = { ...prompts[index], title, content };
@@ -493,8 +465,8 @@ function savePromptFromModal() {
             });
         }
 
-        chrome.storage.local.set({ prompts }, () => {
-            document.getElementById('promptModal').classList.add('hidden');
+        FrelanciaUtils.setStorage({ prompts }).then(() => {
+            FrelanciaUtils.toggleHidden(FrelanciaUtils.$('promptModal'), true);
             renderPrompts(prompts);
             showSaveStatus();
         });

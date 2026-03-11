@@ -21,6 +21,7 @@
         "https://mostaql.com/*"
       ],
       "js": [
+        "utils.js",
         "content.js"
       ],
       "css": [
