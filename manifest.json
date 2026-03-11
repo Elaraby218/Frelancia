@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Mostaql Job Notifier + AI Proposal",
-  "version": "1.0",
-  "description": "تنبيهات فورية للمشاريع الجديدة على مستقل مع إنشاء عروض بالذكاء الاصطناعي",
+  "name": "Frelancia – Freelance Assistant",
+  "version": "2.1.0",
+  "description": "مساعد المستقلين الذكي — تنبيهات فورية، تحليل الملف الشخصي، وإنشاء عروض بالذكاء الاصطناعي",
   "permissions": [
     "notifications",
     "alarms",
@@ -21,6 +21,7 @@
         "https://mostaql.com/*"
       ],
       "js": [
+        "utils.js",
         "content.js"
       ],
       "css": [
@@ -44,12 +45,14 @@
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
   "icons": {
     "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   }
