@@ -608,6 +608,10 @@ function extractProjectData() {
     let duration = 'غير محدد';
     let budget = 'غير محدد';
     let publishDate = 'غير معروف';
+    let hiringRate = 'غير معروف';
+    let clientJoined = 'غير معروف';
+    let openProjects = '0';
+    let underwayProjects = '0';
 
     const metaRows = document.querySelectorAll('.meta-row, .table-meta tr, .card .table tr, li.meta-item');
     metaRows.forEach(row => {
@@ -615,7 +619,6 @@ function extractProjectData() {
         const value = row.querySelector('.meta-value, td:last-child, .meta-item-value')?.textContent.trim().replace(/\s+/g, ' ') || row.innerText.split(/[:\n]/).pop()?.trim().replace(/\s+/g, ' ');
 
         if (label && value) {
-            const l = label.toLowerCase();
             if (label.includes('التواصلات') || label.includes('Communications')) {
                 communications = value;
             } else if (label.includes('مدة التنفيذ') || label.includes('Duration')) {
@@ -662,10 +665,10 @@ function extractProjectData() {
     const category = categoryEl ? categoryEl.textContent.trim() : 'غير معروف';
 
     // Client Metrics & Info
-    let openProjects = '0';
-    let underwayProjects = '0';
-    let clientJoined = 'غير معروف';
-    let hiringRate = 'غير معروف';
+    openProjects = '0';
+    underwayProjects = '0';
+    clientJoined = 'غير معروف';
+    hiringRate = 'غير معروف';
     let clientType = 'صاحب عمل';
 
     const clientCard = document.querySelector('.profile_card');
@@ -1674,6 +1677,7 @@ async function executeChatExport() {
     };
     
     let textOutput = "تصدير محادثة مستقل\n\n";
+    let textOutputNoTime = "";
     let mediaUrls = [];
 
     messages.forEach((msg) => {
@@ -1751,7 +1755,12 @@ async function executeChatExport() {
             
             const messageText = text.trim();
             const attachmentsSection = attachments.length > 0 ? `\n[مرفقات: ${attachments.map(a => a.name).join(', ')}]` : '';
+            
+            // Log with timestamp
             textOutput += `[${currentTime || ''}] ${senderName}:\n${messageText}${attachmentsSection}\n\n`;
+            
+            // Log without timestamp
+            textOutputNoTime += `${senderName}:\n${messageText}${attachmentsSection}\n\n`;
         }
     });
 
@@ -1769,52 +1778,6 @@ async function executeChatExport() {
     const discussionId = projectIdMatch ? projectIdMatch[1] : Date.now();
     const safeTitle = document.title ? document.title.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'chat';
     const folderName = `mostaql_chat_${discussionId}_${safeTitle}`;
-
-    const filesToZip = [];
-    
-    filesToZip.push({
-        name: `chat_log.txt`,
-        content: textOutput
-    });
-
-    if (projectDetailsText) {
-        filesToZip.push({
-            name: `project_details.txt`,
-            content: projectDetailsText
-        });
-    }
-
-    if (myProposalText) {
-        filesToZip.push({
-            name: `my_proposal.txt`,
-            content: myProposalText
-        });
-    }
-
-    mediaUrls.forEach((media, index) => {
-        let fileName = media.name || `media_${index}`;
-        fileName = fileName.replace(/[^a-zA-Z0-9.\\-_]/g, '_');
-        filesToZip.push({
-            name: `media/${fileName}`,
-            url: media.url
-        });
-    });
-
-    if (chrome.runtime && chrome.runtime.id) {
-        chrome.runtime.sendMessage({
-            action: 'download_zip',
-            filename: `${folderName}.zip`,
-            files: filesToZip
-        }, (response) => {
-            exportBtn.disabled = false;
-            exportBtn.innerHTML = originalBtnText;
-        });
-    } else {
-        exportBtn.disabled = false;
-        exportBtn.innerHTML = originalBtnText;
-        alert("انتهت صلاحية جلسة الإضافة بسبب تحديثها. يرجى تحديث الصفحة (Refresh) والمحاولة مرة أخرى.");
-        return;
-    }
 
     const html = `
     <html dir="rtl" lang="ar">
@@ -1907,6 +1870,9 @@ async function executeChatExport() {
                 display: grid; 
                 grid-template-columns: repeat(2, 1fr); 
                 gap: 15px; 
+            }
+            .info-grid.col-3 { 
+                grid-template-columns: repeat(3, 1fr); 
             }
             .info-item { 
                 display: flex; 
@@ -2021,7 +1987,7 @@ async function executeChatExport() {
                         <div class="info-item"><span class="info-label">الميزانية</span><span class="info-value">${pData.budget || "-"}</span></div>
                         <div class="info-item"><span class="info-label">مدة التنفيذ</span><span class="info-value">${pData.duration || "-"}</span></div>
                         <div class="info-item"><span class="info-label">صاحب العمل</span><span class="info-value">${pData.clientName || "-"}</span></div>
-                        <div class="info-item"><span class="info-label">القسم</span><span class="info-value">${pData.category || "-"}</span></div>
+                        ${(pData.category && pData.category !== 'غير معروف' && pData.category !== 'Unknown') ? `<div class="info-item"><span class="info-label">القسم</span><span class="info-value">${pData.category}</span></div>` : ''}
                     </div>
                 </div>
                 
@@ -2034,9 +2000,25 @@ async function executeChatExport() {
             </section>
 
             <section>
-                <h2>2. العرض والاتفاق المالي</h2>
+                <h2>2. معلومات صاحب العمل</h2>
                 <div class="info-card">
-                    <div class="info-grid">
+                    <div class="info-grid col-3">
+                        <div class="info-item"><span class="info-label">اسم صاحب المشروع</span><span class="info-value">${pData.clientName || "-"}</span></div>
+                        <div class="info-item"><span class="info-label">تاريخ التسجيل</span><span class="info-value">${pData.clientJoined || "-"}</span></div>
+                        <div class="info-item"><span class="info-label">معدل التوظيف</span><span class="info-value">${pData.hiringRate || "-"}</span></div>
+                        
+                        ${pData.clientTitle ? `<div class="info-item"><span class="info-label">المسمى الوظيفي</span><span class="info-value">${pData.clientTitle}</span></div>` : ''}
+                        <div class="info-item"><span class="info-label">المشاريع المفتوحة</span><span class="info-value">${pData.openProjects || "0"}</span></div>
+                        <div class="info-item"><span class="info-label">مشاريع قيد التنفيذ</span><span class="info-value">${pData.underwayProjects || "0"}</span></div>
+                        <div class="info-item"><span class="info-label">التواصلات الجارية</span><span class="info-value">${pData.ongoingCommunications || "0"}</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>3. العرض والاتفاق المالي</h2>
+                <div class="info-card">
+                    <div class="info-grid col-3">
                         <div class="info-item"><span class="info-label">المقدم</span><span class="info-value">${propData.freelancer || "-"}</span></div>
                         <div class="info-item"><span class="info-label">المبلغ المتفق عليه</span><span class="info-value">${propData.price || "-"}</span></div>
                         <div class="info-item"><span class="info-label">المدة الزمنية</span><span class="info-value">${propData.duration || "-"}</span></div>
@@ -2049,7 +2031,7 @@ async function executeChatExport() {
             <div class="page-break"></div>
 
             <section>
-                <h2>3. سجل المناقشات والرسائل</h2>
+                <h2>4. سجل المناقشات والرسائل</h2>
                 <div class="chat-container">
                     ${chatData.map(m => `
                         <div class="msg-row ${m.isUs ? 'us' : 'other'}">
@@ -2085,6 +2067,45 @@ async function executeChatExport() {
         </div>
     </body>
     </html>`;
+
+    const filesToZip = [];
+    
+    filesToZip.push({ name: `chat_log.txt`, content: textOutput });
+    filesToZip.push({ name: `chat_log_simple.txt`, content: textOutputNoTime });
+    filesToZip.push({ name: `report.html`, content: html });
+
+    if (projectDetailsText) {
+        filesToZip.push({ name: `project_details.txt`, content: projectDetailsText });
+    }
+
+    if (myProposalText) {
+        filesToZip.push({ name: `my_proposal.txt`, content: myProposalText });
+    }
+
+    mediaUrls.forEach((media, index) => {
+        let fileName = media.name || `media_${index}`;
+        fileName = fileName.replace(/[^a-zA-Z0-9.\\-_]/g, '_');
+        filesToZip.push({
+            name: `media/${fileName}`,
+            url: media.url
+        });
+    });
+
+    if (chrome.runtime && chrome.runtime.id) {
+        chrome.runtime.sendMessage({
+            action: 'download_zip',
+            filename: `${folderName}.zip`,
+            files: filesToZip
+        }, (response) => {
+            exportBtn.disabled = false;
+            exportBtn.innerHTML = originalBtnText;
+        });
+    } else {
+        exportBtn.disabled = false;
+        exportBtn.innerHTML = originalBtnText;
+        alert("انتهت صلاحية جلسة الإضافة بسبب تحديثها. يرجى تحديث الصفحة (Refresh) والمحاولة مرة أخرى.");
+        return;
+    }
 
     const blob = new Blob([html], {type: 'text/html'});
     const url = URL.createObjectURL(blob);
@@ -2137,10 +2158,22 @@ async function extractProjectDetailsFull() {
         output += `الحالة: ${data.status}\n`;
         output += `الميزانية: ${data.budget}\n`;
         output += `مدة التنفيذ: ${data.duration}\n`;
-        output += `القسم: ${data.category}\n`;
+        if (data.category && data.category !== 'غير معروف' && data.category !== 'Unknown') {
+            output += `القسم: ${data.category}\n`;
+        }
         output += `الوسوم: ${data.tagsList.join(', ')}\n\n`;
+        
         output += `معلومات صاحب العمل:\n`;
-        output += `الاسم: ${data.clientName}\n\n`;
+        output += `الاسم: ${data.clientName}\n`;
+        if (data.clientTitle) {
+            output += `الدور/التخصص: ${data.clientTitle}\n`;
+        }
+        output += `معدل التوظيف: ${data.hiringRate || "غير معروف"}\n`;
+        output += `تاريخ التسجيل: ${data.clientJoined || "غير معروف"}\n`;
+        output += `المشاريع المفتوحة: ${data.openProjects || "0"}\n`;
+        output += `مشاريع قيد التنفيذ: ${data.underwayProjects || "0"}\n`;
+        output += `التواصلات الجارية: ${data.ongoingCommunications || "0"}\n\n`;
+        
         output += `وصف المشروع:\n${data.description}\n`;
 
         return { text: output, data: data };
@@ -2203,6 +2236,15 @@ async function fetchDeepProjectData(url) {
             };
             res.hiringRate = getClientVal('معدل التوظيف');
             res.clientJoined = getClientVal('تاريخ التسجيل');
+            res.openProjects = getClientVal('المشاريع المفتوحة');
+            res.underwayProjects = getClientVal('مشاريع قيد التنفيذ');
+            res.ongoingCommunications = getClientVal('التواصلات الجارية');
+            
+            // Client specialization/title
+            const specEl = clientCard.querySelector('.meta_items li');
+            if (specEl) {
+                res.clientTitle = specEl.innerText.trim();
+            }
         }
 
         // Description extraction
