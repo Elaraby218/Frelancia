@@ -168,6 +168,18 @@ body {
   color: var(--primary);
 }
 
+.btn.toggle-off {
+  background: #fdf2f2;
+  color: var(--danger);
+  border-color: #fbc6c6;
+}
+
+.btn.toggle-off:hover {
+  background: #fae4e4;
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
 /* Connection specific */
 .btn.connection {
   padding: 6px;

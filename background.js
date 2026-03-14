@@ -199,7 +199,7 @@ async function initializeSignalR() {
 // Check for new jobs
 async function checkForNewJobs() {
   try {
-    const data = await chrome.storage.local.get(['settings', 'seenJobs', 'stats', 'recentJobs']);
+    const data = await chrome.storage.local.get(['settings', 'seenJobs', 'stats', 'recentJobs', 'notificationsEnabled']);
     const settings = data.settings || {};
     let seenJobs = data.seenJobs || [];
     let recentJobs = data.recentJobs || [];
@@ -366,10 +366,17 @@ async function checkForNewJobs() {
     }
 
     if (qualityJobs.length > 0) {
-      showNotification(qualityJobs);
+      // Check if notifications are globally enabled
+      const isEnabled = data.notificationsEnabled !== false;
+      
+      if (isEnabled) {
+        showNotification(qualityJobs);
 
-      if (settings.sound) {
-        playSound();
+        if (settings.sound) {
+          playSound();
+        }
+      } else {
+        console.log('Notifications are toggled off. Skipping alert for new jobs.');
       }
     }
 
@@ -608,7 +615,7 @@ async function fetchProjectDetails(url) {
 
 // Track specific projects for changes
 async function checkTrackedProjects() {
-  const data = await chrome.storage.local.get(['trackedProjects', 'settings']);
+  const data = await chrome.storage.local.get(['trackedProjects', 'settings', 'notificationsEnabled']);
   const trackedProjects = data.trackedProjects || {};
   const settings = data.settings || {};
 
@@ -653,9 +660,17 @@ async function checkTrackedProjects() {
 
         if (changed) {
           console.log(`Update for project ${id}: ${changeMsg}`);
-          showTrackedNotification(project, changeMsg);
-          if (settings.sound) {
-            playTrackedSound();
+          
+          // Check if notifications are globally enabled
+          const isEnabled = data.notificationsEnabled !== false;
+          
+          if (isEnabled) {
+            showTrackedNotification(project, changeMsg);
+            if (settings.sound) {
+              playTrackedSound();
+            }
+          } else {
+            console.log('Notifications are toggled off. Skipping alert for tracked project update.');
           }
 
           // Update stored data

@@ -101,4 +101,38 @@ function setupEventListeners() {
       });
     });
   }
+
+  // Toggle Notifications
+  const toggleBtn = document.getElementById('toggleNotificationsBtn');
+  if (toggleBtn) {
+    // Load initial state
+    chrome.storage.local.get(['notificationsEnabled'], (data) => {
+      const isEnabled = data.notificationsEnabled !== false; // Default to true
+      updateToggleUI(toggleBtn, isEnabled);
+    });
+
+    toggleBtn.addEventListener('click', () => {
+      chrome.storage.local.get(['notificationsEnabled'], (data) => {
+        const isEnabled = data.notificationsEnabled !== false;
+        const newState = !isEnabled;
+        
+        chrome.storage.local.set({ notificationsEnabled: newState }, () => {
+          updateToggleUI(toggleBtn, newState);
+        });
+      });
+    });
+  }
+}
+
+// ==========================================
+// Helper: Update Toggle UI
+// ==========================================
+function updateToggleUI(button, isEnabled) {
+  if (isEnabled) {
+    button.className = 'btn secondary';
+    button.innerHTML = '<i class="fas fa-bell"></i><span>الإشعارات: مفعلة</span>';
+  } else {
+    button.className = 'btn toggle-off';
+    button.innerHTML = '<i class="fas fa-bell-slash"></i><span>الإشعارات: متوقفة</span>';
+  }
 }

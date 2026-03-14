@@ -139,7 +139,7 @@ class SignalRClient {
     async handleNewJobs(jobs) {
         console.log(`SignalR: Processing ${jobs.length} new job(s) [ZERO HTTP REQUESTS]`);
 
-        const data = await chrome.storage.local.get(['seenJobs', 'recentJobs', 'stats', 'settings']);
+        const data = await chrome.storage.local.get(['seenJobs', 'recentJobs', 'stats', 'settings', 'notificationsEnabled']);
         let seenJobs = data.seenJobs || [];
         let recentJobs = data.recentJobs || [];
         let stats = data.stats || { todayCount: 0, todayDate: new Date().toDateString() };
@@ -197,11 +197,18 @@ class SignalRClient {
                 return;
             }
 
-            console.log(`SignalR: Showing notifications for ${validJobs.length} job(s) [NO HTTP REQUESTS MADE]`);
-            showNotification(validJobs);
+            // Check if notifications are globally enabled
+            const isEnabled = data.notificationsEnabled !== false;
+            
+            if (isEnabled) {
+                console.log(`SignalR: Showing notifications for ${validJobs.length} job(s) [NO HTTP REQUESTS MADE]`);
+                showNotification(validJobs);
 
-            if (settings.sound) {
-                playSound();
+                if (settings.sound) {
+                    playSound();
+                }
+            } else {
+                console.log('SignalR: Notifications are toggled off. Skipping alert.');
             }
         } else {
             console.log('SignalR: No valid jobs to notify after filtering');
