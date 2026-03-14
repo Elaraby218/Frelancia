@@ -2076,8 +2076,11 @@ async function executeExportAll() {
 
     const filesToZip = [];
     
-    filesToZip.push({ name: `chat_log.txt`, content: textOutput });
-    filesToZip.push({ name: `chat_log_simple.txt`, content: textOutputNoTime });
+    if (chatData && chatData.length > 0) {
+        filesToZip.push({ name: `chat_log.txt`, content: textOutput });
+        filesToZip.push({ name: `chat_log_simple.txt`, content: textOutputNoTime });
+    }
+    
     filesToZip.push({ name: `report.html`, content: html });
 
     if (pData.bids && pData.bids.length > 0) {
