@@ -1589,65 +1589,35 @@ function injectProfileTools() {
 }
 
 function injectMessageExporter() {
-    // We want to add the button near the project details top navigation
-    const targetNav = document.querySelector("#bidTabs > ul");
-    if (!targetNav) return;
+    // We want to add the button under the message meta panel
+    const targetPanel = document.querySelector("#message-meta");
+    if (!targetPanel) return;
 
     if (document.getElementById('mostaql-export-chat-btn')) return;
 
-    const li = document.createElement('li');
-    li.className = 'nav-item mrg--an-imp';
-    
     const btn = document.createElement('button');
     btn.id = 'mostaql-export-chat-btn';
-    btn.className = 'btn btn-primary';
-    btn.style.marginTop = '10px';
-    btn.style.marginLeft = '5px';
-    btn.innerHTML = '<i class="fa fa-download"></i> تصدير المحادثة';
-    btn.title = 'تصدير المحادثة (PDF، نص، ومرفقات)';
+    btn.className = 'btn btn-primary btn-block'; // btn-block to make it full width if desired, or just btn-primary
+    btn.style.marginTop = '15px';
+    btn.style.marginBottom = '15px';
+    btn.innerHTML = '<i class="fa fa-download"></i> تصدير';
+    btn.title = 'تصدير التقرير والمحادثة';
     
     btn.addEventListener('click', async () => {
-        await executeChatExport();
+        const originalHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري التصدير...';
+        try {
+            await executeChatExport();
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
     });
 
-    const debugBtn = document.createElement('button');
-    debugBtn.id = 'mostaql-debug-fetch-btn';
-    debugBtn.className = 'btn btn-default'; // Neutral color
-    debugBtn.style.marginTop = '10px';
-    debugBtn.style.marginLeft = '5px';
-    debugBtn.innerHTML = '<i class="fa fa-bug"></i> Debug Data';
-    debugBtn.title = 'طباعة البيانات في الكونسول للمعاينة';
-    
-    debugBtn.addEventListener('click', async () => {
-        debugBtn.disabled = true;
-        const originalText = debugBtn.innerHTML;
-        debugBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Loading...';
-        await executeDebugFetch();
-        debugBtn.disabled = false;
-        debugBtn.innerHTML = originalText;
-    });
-
-    li.appendChild(btn);
-    li.appendChild(debugBtn);
-    targetNav.appendChild(li);
+    targetPanel.after(btn);
 }
 
-async function executeDebugFetch() {
-    console.log("%c--- Mostaql Data Debug ---", "color: #2386c8; font-weight: bold; font-size: 14px;");
-    
-    const details = await extractProjectDetailsFull();
-    console.log("%c[Project Details File Content]", "color: #e67e22; font-weight: bold;");
-    console.log(details || "Error: No project details found.");
-
-    console.log("\n");
-
-    const proposal = extractMyProposalFull();
-    console.log("%c[My Proposal File Content]", "color: #27ae60; font-weight: bold;");
-    console.log(proposal || "Error: No proposal found.");
-    
-    console.log("%c---------------------------", "color: #2386c8; font-weight: bold;");
-    alert("تمت طباعة البيانات في الكونسول (F12) بنجاح!");
-}
 
 async function executeChatExport() {
     console.log("Starting chat export...");
@@ -2028,29 +1998,11 @@ async function executeChatExport() {
                 <div class="content-box">${propData.content || "لا يوجد نص"}</div>
             </section>
 
-            ${(pData.bids && pData.bids.length > 0) ? `
-            <section>
-                <h2>4. عروض المستقلين الآخرين (${pData.bids.length})</h2>
-                ${pData.bids.map((bid, bIdx) => `
-                    <div class="info-card" style="margin-bottom: 25px;">
-                        <div class="dsp--f-space-between" style="margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
-                            <span style="font-weight: 700; color: var(--primary);">${bIdx + 1}. ${bid.name}</span>
-                            <span style="font-size: 12px; color: var(--text-muted);">${bid.timeText} (${bid.timeOffset || ""})</span>
-                        </div>
-                        <div style="font-size: 13px; margin-bottom: 10px; color: var(--text-muted);">
-                            <i class="fa fa-briefcase"></i> ${bid.title} | 
-                            <a href="${bid.link}" target="_blank" style="color: var(--primary); text-decoration: none;">رابط الملف الشخصي</a>
-                        </div>
-                        <div class="content-box" style="background: #fff; font-size: 13px;">${bid.content}</div>
-                    </div>
-                `).join('')}
-            </section>
-            ` : ''}
 
             <div class="page-break"></div>
 
             <section>
-                <h2>${(pData.bids && pData.bids.length > 0) ? '5' : '4'}. سجل المناقشات والرسائل</h2>
+                <h2>4. سجل المناقشات والرسائل</h2>
                 <div class="chat-container">
                     ${chatData.map(m => `
                         <div class="msg-row ${m.isUs ? 'us' : 'other'}">
