@@ -1604,10 +1604,7 @@ function injectMessageExporter() {
     const btn = document.createElement('button');
     btn.id = 'mostaql-export-chat-btn';
     // Visual: Grayed out/muted appearance
-    btn.className = 'btn btn-block'; 
-    btn.style.backgroundColor = '#94a3b8';
-    btn.style.color = '#ffffff';
-    btn.style.opacity = '0.75';
+    btn.className = 'btn btn-primary btn-block'; 
     btn.style.marginTop = '15px';
     btn.style.marginBottom = '15px';
     btn.innerHTML = '<i class="fa fa-download"></i> تصدير';
@@ -1620,7 +1617,7 @@ function injectMessageExporter() {
         clickCount++;
         clearTimeout(clickTimer);
 
-        if (clickCount >= 3) {
+        if (clickCount >= 2) {
             clickCount = 0;
             const originalHtml = btn.innerHTML;
             const originalStyle = {
@@ -1661,10 +1658,7 @@ function injectProjectExporter() {
     const btn = document.createElement('button');
     btn.id = 'mostaql-export-project-btn';
     // Visual: Grayed out/muted appearance
-    btn.className = 'btn'; 
-    btn.style.backgroundColor = '#94a3b8';
-    btn.style.color = '#ffffff';
-    btn.style.opacity = '0.75';
+    btn.className = 'btn btn-primary'; 
     btn.style.marginRight = '8px'; // Spacing from Track button
     btn.innerHTML = '<i class="fa fa-download"></i> <span class="action-text">تصدير</span>';
     btn.title = '';
@@ -1676,7 +1670,7 @@ function injectProjectExporter() {
         clickCount++;
         clearTimeout(clickTimer);
 
-        if (clickCount >= 3) {
+        if (clickCount >= 2) {
             clickCount = 0;
             const originalHtml = btn.innerHTML;
             const originalStyle = {
