@@ -21,12 +21,17 @@
 **Frelancia** هي رفيقك المثالي كـ Freelancer على منصة مستقل. تضمن لك هذه الإضافة ألا يفوتك أي مشروع مهم، وتساعدك على كتابة عروض مقنعة في ثوانٍ معدودة.
 
 ### ✨ المميزات الرئيسية
-- 🔔 **تنبيهات فورية**: إشعارات ذكية فور نشر مشاريع تطابق اهتماماتك.
-- 🤖 **مقترح العروض بالذكاء الاصطناعي**: توليد عروض مخصصة واحترافية بناءً على وصف المشروع.
-- 🎯 **فلاتر مخصصة**: اختر التصنيفات التي تهمك (تطوير، تصميم، كتابة، إلخ).
-- 🔊 **تنبيهات صوتية**: أصوات تنبيه مميزة لضمان انتباهك (قابلة للتخصيص).
-- ⏱️ **سرعة الفحص**: تحكم كامل في وتيرة فحص المشاريع الجديدة.
-- 📊 **لوحة تحكم**: واجهة عصرية لمتابعة الإحصائيات وإدارة الإعدادات.
+- 🔔 **تنبيهات فورية** عبر SignalR مع احتياطي تلقائي للاستعلام الدوري
+- 🔌 **سيرفر مخصص** — ادعم سيرفر SignalR الخاص بك من إعدادات الإضافة
+- 🎯 **فلاتر متقدمة** — كلمات مفتاحية، ميزانية، معدل توظيف، مدة التنفيذ، تصنيفات، ساعات هدوء
+- 🤖 **توليد عروض بالذكاء الاصطناعي** مع قوالب قابلة للتخصيص الكامل
+- 📝 **ملء تلقائي لنموذج العرض** — يملأ السعر والمقترح دفعةً واحدة
+- 📊 **تحليلات العروض** — إجمالي، آخر 30 يوم، اليوم، وعداد تنازلي للعروض اليومية
+- 🕐 **متتبع العروض** — جدول زمني لكل عرض مع شريط تقدم وعداد 30 يوماً
+- 👁️ **مراقبة المشاريع** — تتبع أي مشروع ومتابعة تحديثاته
+- 📤 **تصدير البيانات** — تصدير رسائل المشروع وبيانات المشروع كـ ZIP
+- 🔊 **تنبيهات صوتية** قابلة للاختبار من لوحة التحكم
+- ⚙️ **لوحة تحكم** شاملة لكل الإعدادات والإحصائيات والمشاريع المتابَعة
 
 ---
 
@@ -35,12 +40,17 @@
 **Frelancia** is the ultimate companion for freelancers on Mostaql.com. This extension ensures you never miss a high-value project and helps you craft winning proposals using advanced AI technology.
 
 ### ✨ Key Features
-- 🔔 **Real-time Notifications**: Get alerted the moment a new project is posted.
-- 🤖 **AI Proposal Generator**: Create professional, customized proposals tailored to the project requirements.
-- 🎯 **Advanced Filtering**: Monitor specific categories or all new opportunities.
-- 🔊 **Audio Alerts**: Distinctive notification sounds to keep you informed.
-- ⏱️ **Flexible Polling**: Customize how often the extension checks for new projects.
-- 📊 **Modern Dashboard**: A sleek interface to manage your settings and view project stats.
+- 🔔 **Instant notifications** via SignalR with automatic polling fallback
+- 🔌 **Custom server** — point the extension at your own SignalR hub
+- 🎯 **Advanced filters** — keywords, budget, hiring rate, duration, categories, quiet hours
+- 🤖 **AI proposal generator** with fully customizable prompt templates
+- 📝 **Bid form auto-fill** — fills price and proposal in one click
+- 📊 **Bid analytics modal** — totals, last 30 days, today, and daily-slot countdown timers
+- 🕐 **Bid tracker tab** — timeline view with 30-day progress bars per bid
+- 👁️ **Project monitoring** — track any project and follow its updates
+- 📤 **Data export** — export project messages and details as a ZIP archive
+- 🔊 **Audio alerts** — testable directly from the dashboard
+- ⚙️ **Full dashboard** — settings, stats, tracked projects, and prompt management
 
 ---
 
@@ -87,6 +97,12 @@
 - **Local Storage**: All your settings and data are stored locally on your device.
 - **Direct API Calls**: Your API keys are used directly to communicate with AI providers; no data is sent to intermediate servers.
 - **Transparency**: Open-source code for full auditability.
+
+---
+
+## 🤝 Contributing
+
+See [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md) for branch naming, code rules, and the PR checklist.
 
 ---
 
