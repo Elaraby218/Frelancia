@@ -115,7 +115,14 @@ chrome.runtime.onInstalled.addListener(() => {
 chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === 'checkJobs') {
     const data = await chrome.storage.local.get(['settings']);
-    const notificationMode = (data.settings || {}).notificationMode || 'auto';
+    const settings = data.settings || {};
+    const notificationMode = settings.notificationMode || 'auto';
+    
+    // Check if system monitoring is completely paused from dashboard
+    if (settings.systemEnabled === false) {
+      console.log('System is paused via Dashboard toggle. Skipping alarm checks.');
+      return;
+    }
 
     // Always check tracked projects regardless of mode
     checkTrackedProjects();
@@ -668,16 +675,9 @@ async function checkTrackedProjects() {
         if (changed) {
           console.log(`Update for project ${id}: ${changeMsg}`);
           
-          // Check if notifications are globally enabled
-          const isEnabled = data.notificationsEnabled !== false;
-          
-          if (isEnabled) {
-            showTrackedNotification(project, changeMsg);
-            if (settings.sound) {
-              playTrackedSound();
-            }
-          } else {
-            console.log('Notifications are toggled off. Skipping alert for tracked project update.');
+          showTrackedNotification(project, changeMsg);
+          if (settings.sound) {
+            playTrackedSound();
           }
 
           // Update stored data
