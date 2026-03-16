@@ -55,6 +55,10 @@ class SignalRClient {
                 })
                 .configureLogging(signalR.LogLevel.Information)
                 .build();
+                
+            // Increase timeouts to prevent dropping during Service Worker suspension/wake cycles
+            this.connection.serverTimeoutInMilliseconds = 120000; // 2 minutes (default is 30s)
+            this.connection.keepAliveIntervalInMilliseconds = 15000; // 15 seconds (default is 15s)
 
             this.registerEventHandlers();
 
@@ -144,6 +148,11 @@ class SignalRClient {
         let recentJobs = data.recentJobs || [];
         let stats = data.stats || { todayCount: 0, todayDate: new Date().toDateString() };
         const settings = data.settings || {};
+
+        if (settings.systemEnabled === false) {
+            console.log('SignalR: System is paused via Dashboard toggle. Ignoring jobs.');
+            return;
+        }
 
         if (stats.todayDate !== new Date().toDateString()) {
             stats.todayCount = 0;
