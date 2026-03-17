@@ -131,25 +131,38 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
     };
 
+    const finalize = async (result) => {
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      await updateChatSession((session) => {
+        session.messages = (session.messages || []).filter((m) => !m.pending);
+        session.messages.push({ role: 'assistant', content: result.text });
+        session.model = result.model || session.model;
+      });
+      sendResponse({ success: true, ...result });
+    };
+
+    const fail = async (error) => {
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      console.error('OpenRouter generation error:', error);
+      const errorMsg = error.message || 'OpenRouter request failed';
+      await updateChatSession((session) => {
+        session.messages = (session.messages || []).filter((m) => !m.pending);
+        session.messages.push({ role: 'assistant', content: '\u062a\u0639\u0630\u0631 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0631\u062f: ' + errorMsg });
+      });
+      sendResponse({ success: false, error: errorMsg });
+    };
+
+    // Try streaming first, fall back to non-streaming if the provider rejects it
     generateOpenRouterProposalStream(message, onChunk)
-      .then(async (result) => {
-        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
-        await updateChatSession((session) => {
-          session.messages = (session.messages || []).filter((m) => !m.pending);
-          session.messages.push({ role: 'assistant', content: result.text });
-          session.model = result.model || session.model;
-        });
-        sendResponse({ success: true, ...result });
-      })
-      .catch(async (error) => {
-        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
-        console.error('OpenRouter generation error:', error);
-        const errorMsg = error.message || 'OpenRouter request failed';
-        await updateChatSession((session) => {
-          session.messages = (session.messages || []).filter((m) => !m.pending);
-          session.messages.push({ role: 'assistant', content: '\u062a\u0639\u0630\u0631 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0631\u062f: ' + errorMsg });
-        });
-        sendResponse({ success: false, error: errorMsg });
+      .then(finalize)
+      .catch(async (streamError) => {
+        console.warn('Streaming failed, falling back to non-streaming:', streamError.message);
+        try {
+          const result = await generateOpenRouterProposal(message);
+          await finalize(result);
+        } catch (fallbackError) {
+          await fail(fallbackError);
+        }
       });
     return true;
   }
