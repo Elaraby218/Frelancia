@@ -10,14 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
       document.body.classList.add('popup-mode');
     }
     // sidebar is the default — no class needed (base CSS handles it)
-  });
 
-  // Initialize minimal UI
-  loadStats();
-  setupEventListeners();
-  
-  // Refresh stats every 30 seconds while open
-  setInterval(loadStats, 30000);
+    // Initialize minimal UI only after the correct display mode class is applied
+    loadStats();
+    setupEventListeners();
+
+    // Refresh stats every 30 seconds while open
+    setInterval(loadStats, 30000);
+  });
 });
 
 // ==========================================
