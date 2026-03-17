@@ -24,7 +24,8 @@ function saveAllSettings() {
         interval:         parseInt(getVal('checkInterval'))  || 1,
         systemEnabled:    getVal('systemToggle'),
         notificationMode: getVal('notificationMode') || 'auto',
-        signalrServerUrl: getVal('signalrServerUrl') || ''
+        signalrServerUrl: getVal('signalrServerUrl') || '',
+        displayMode:      document.querySelector('.mode-option.active')?.dataset.mode || 'sidebar'
     };
 
     const proposalTemplate = document.getElementById('proposalTemplate').value;
@@ -32,6 +33,7 @@ function saveAllSettings() {
     chrome.storage.local.set({ settings, proposalTemplate }, () => {
         showSaveStatus();
         chrome.runtime.sendMessage({ action: 'updateAlarm', interval: settings.interval });
+        // displayMode is applied instantly on button click — no need to re-send here
         if (settings.notificationMode === 'polling') {
             chrome.runtime.sendMessage({ action: 'disconnectSignalR' });
         } else {
@@ -71,4 +73,10 @@ function applySettingsToForm(s) {
     setVal('systemToggle',      s.systemEnabled !== false);
     setVal('notificationMode',  s.notificationMode || 'auto');
     setVal('signalrServerUrl',  s.signalrServerUrl || '');
+
+    // Display mode switcher
+    const displayMode = s.displayMode || 'sidebar';
+    document.querySelectorAll('.mode-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.mode === displayMode);
+    });
 }

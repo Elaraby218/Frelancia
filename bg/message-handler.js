@@ -5,6 +5,26 @@
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
+  if (message.action === 'setDisplayMode') {
+    const mode = message.mode === 'sidebar' ? 'sidebar' : 'popup';
+    const tabId = message.tabId || null;
+
+    applyDisplayMode(mode)
+      .then(async () => {
+        if (mode === 'sidebar' && tabId) {
+          // Open the side panel immediately on the requesting tab
+          try {
+            await chrome.sidePanel.open({ tabId });
+          } catch (e) {
+            console.warn('Could not auto-open side panel:', e.message);
+          }
+        }
+        sendResponse({ success: true, mode });
+      })
+      .catch((e) => sendResponse({ success: false, error: e.message }));
+    return true;
+  }
+
   if (message.action === 'checkNow') {
     checkForNewJobs()
       .then((result) => sendResponse(result))

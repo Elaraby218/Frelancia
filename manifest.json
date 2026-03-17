@@ -8,7 +8,8 @@
     "alarms",
     "storage",
     "offscreen",
-    "downloads"
+    "downloads",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://mostaql.com/*",
@@ -61,5 +62,8 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
+  },
+  "side_panel": {
+    "default_path": "popup.html"
   }
 }

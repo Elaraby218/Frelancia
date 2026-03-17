@@ -3,11 +3,20 @@
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Detect display mode and apply the correct body class
+  chrome.storage.local.get(['settings'], (data) => {
+    const mode = (data.settings || {}).displayMode || 'sidebar';
+    if (mode === 'popup') {
+      document.body.classList.add('popup-mode');
+    }
+    // sidebar is the default — no class needed (base CSS handles it)
+  });
+
   // Initialize minimal UI
   loadStats();
   setupEventListeners();
   
-  // Refresh stats every 30 seconds while popup is open
+  // Refresh stats every 30 seconds while open
   setInterval(loadStats, 30000);
 });
 
