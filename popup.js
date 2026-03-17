@@ -187,6 +187,11 @@ function setupChatListeners() {
     if (changes.popupActiveTab?.newValue === 'ai-chat') {
       activateTab('ai-chat');
     }
+
+    // Background updated the chat session (e.g. API response arrived)
+    if (changes[CHAT_STORAGE_KEY]?.newValue) {
+      await reloadChatFromStorage();
+    }
   });
 }
 
@@ -255,9 +260,52 @@ async function loadPopupChatState() {
   popupChatState.messages = Array.isArray(saved?.messages) ? saved.messages : [];
   popupChatState.sessionProjectId = saved?.sessionProjectId || saved?.project?.id || '';
   popupChatState.contextSummary = saved?.contextSummary || buildProjectContextSummary(saved?.project || null);
+  popupChatState.loading = popupChatState.messages.some((m) => m.pending);
+
+  if (popupChatState.loading) {
+    setChatStatus('جاري التوليد...');
+  }
 
   renderProjectInfo();
   renderChatMessages();
+}
+
+async function reloadChatFromStorage() {
+  const data = await chrome.storage.local.get(['settings', CHAT_STORAGE_KEY]);
+  const settings = data.settings || {};
+  const saved = data[CHAT_STORAGE_KEY] || null;
+
+  popupChatState.model = settings.openRouterModel || saved?.model || popupChatState.model;
+  document.getElementById('chatModel').textContent = popupChatState.model;
+
+  const prevMessages = popupChatState.messages;
+  const newMessages = Array.isArray(saved?.messages) ? saved.messages : [];
+
+  popupChatState.project = saved?.project || popupChatState.project;
+  popupChatState.messages = newMessages;
+  popupChatState.sessionProjectId = saved?.sessionProjectId || popupChatState.sessionProjectId;
+  popupChatState.contextSummary = saved?.contextSummary || popupChatState.contextSummary;
+
+  const wasLoading = popupChatState.loading;
+  popupChatState.loading = newMessages.some((m) => m.pending);
+
+  setChatStatus(popupChatState.loading ? 'جاري التوليد...' : 'جاهز');
+
+  // Detect streaming update: same message count, last message is pending
+  // with content changing — use lightweight bubble update instead of full rebuild
+  const isStreamingUpdate =
+    popupChatState.loading &&
+    newMessages.length === prevMessages.length &&
+    newMessages.length > 0 &&
+    newMessages[newMessages.length - 1].pending &&
+    newMessages[newMessages.length - 1].content;
+
+  if (isStreamingUpdate) {
+    updateStreamingBubble();
+  } else {
+    renderProjectInfo();
+    renderChatMessages();
+  }
 }
 
 // ==========================================
@@ -287,9 +335,16 @@ function renderChatMessages() {
   }
 
   container.innerHTML = messages.map((msg, i) => {
-    const body = msg.pending
-      ? '<div class="typing"><span></span><span></span><span></span></div>'
-      : (msg.role === 'assistant' ? renderMarkdown(msg.content) : `<p>${escapeHtml(msg.content)}</p>`);
+    let body;
+    if (msg.pending && !msg.content) {
+      body = '<div class="typing"><span></span><span></span><span></span></div>';
+    } else if (msg.pending && msg.content) {
+      body = renderMarkdown(msg.content) + '<div class="typing"><span></span><span></span><span></span></div>';
+    } else if (msg.role === 'assistant') {
+      body = renderMarkdown(msg.content);
+    } else {
+      body = `<p>${escapeHtml(msg.content)}</p>`;
+    }
 
     const actions = (msg.role === 'assistant' && !msg.pending)
       ? '<div class="chat-actions"><button class="mini-btn" data-action="copy">نسخ</button><button class="mini-btn" data-action="apply">تعبئة</button></div>'
@@ -298,7 +353,7 @@ function renderChatMessages() {
     return `<article class="chat-message ${escapeHtml(msg.role)}" data-index="${i}">` +
       `<div class="chat-bubble">` +
         `<div class="chat-role">${msg.role === 'user' ? 'You' : 'AI'}</div>` +
-        `<div>${body}</div>${actions}` +
+        `<div class="chat-body">${body}</div>${actions}` +
       `</div></article>`;
   }).join('');
 
@@ -311,6 +366,34 @@ function renderChatMessages() {
       if (btn.dataset.action === 'apply') applyProposalToProject(msg.content);
     });
   });
+
+  container.scrollTop = container.scrollHeight;
+}
+
+/**
+ * Lightweight update for streaming: only re-renders the last pending message
+ * bubble instead of rebuilding the entire message list.
+ */
+function updateStreamingBubble() {
+  const container = document.getElementById('chatMessages');
+  const messages = popupChatState.messages || [];
+  const lastMsg = messages[messages.length - 1];
+
+  if (!lastMsg || !lastMsg.pending) return;
+
+  const lastArticle = container.querySelector(`[data-index="${messages.length - 1}"]`);
+  if (!lastArticle) {
+    renderChatMessages();
+    return;
+  }
+
+  const bodyEl = lastArticle.querySelector('.chat-body');
+  if (!bodyEl) return;
+
+  if (lastMsg.content) {
+    bodyEl.innerHTML = renderMarkdown(lastMsg.content) +
+      '<div class="typing"><span></span><span></span><span></span></div>';
+  }
 
   container.scrollTop = container.scrollHeight;
 }
@@ -338,6 +421,7 @@ async function requestAssistantReply() {
 
   popupChatState.messages.push({ role: 'assistant', content: '', pending: true });
   renderChatMessages();
+  await persistPopupChatState();
 
   const outbound = prepareMessagesForApi(
     popupChatState.messages,
@@ -347,25 +431,11 @@ async function requestAssistantReply() {
   chrome.runtime.sendMessage({
     action: 'generateOpenRouterProposal',
     messages: outbound
-  }, async (response) => {
-    popupChatState.loading = false;
-    popupChatState.messages = popupChatState.messages.filter((m) => !m.pending);
-
-    if (chrome.runtime.lastError || !response || !response.success) {
-      const errorMsg = chrome.runtime.lastError?.message
-        || response?.error
-        || 'خطأ غير معروف';
-      popupChatState.messages.push({ role: 'assistant', content: 'تعذر توليد الرد: ' + errorMsg });
-      setChatStatus('فشل التوليد');
-    } else {
-      popupChatState.model = response.model || popupChatState.model;
-      document.getElementById('chatModel').textContent = popupChatState.model;
-      popupChatState.messages.push({ role: 'assistant', content: response.text });
-      setChatStatus('جاهز');
-    }
-
-    renderChatMessages();
-    await persistPopupChatState();
+  }, () => {
+    // Background has already written the result to storage.
+    // The storage.onChanged listener will call reloadChatFromStorage().
+    // This callback is only needed to suppress chrome.runtime.lastError.
+    void chrome.runtime.lastError;
   });
 }
 

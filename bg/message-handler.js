@@ -3,6 +3,20 @@
 // Depends on: constants.js, filters.js, notifications.js, job-checker.js, audio.js
 // ==========================================
 
+const BG_CHAT_SESSION_KEY = 'openRouterChatSession';
+
+/**
+ * Read-modify-write the chat session in storage.
+ * The mutator function receives the session object and can modify it in place.
+ */
+async function updateChatSession(mutator) {
+  const data = await chrome.storage.local.get([BG_CHAT_SESSION_KEY]);
+  const session = data[BG_CHAT_SESSION_KEY] || {};
+  mutator(session);
+  session.updatedAt = Date.now();
+  await chrome.storage.local.set({ [BG_CHAT_SESSION_KEY]: session });
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'checkNow') {
@@ -90,11 +104,52 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'generateOpenRouterProposal') {
-    generateOpenRouterProposal(message)
-      .then((result) => sendResponse({ success: true, ...result }))
-      .catch((error) => {
+    const STREAM_FLUSH_MS = 300;
+    let lastFlush = 0;
+    let flushTimer = null;
+
+    const flushChunk = async (text) => {
+      lastFlush = Date.now();
+      await updateChatSession((session) => {
+        const msgs = session.messages || [];
+        const pendingIdx = msgs.findIndex((m) => m.pending);
+        if (pendingIdx !== -1) {
+          msgs[pendingIdx] = { role: 'assistant', content: text, pending: true };
+        }
+      });
+    };
+
+    const onChunk = (accumulated) => {
+      const now = Date.now();
+      if (now - lastFlush >= STREAM_FLUSH_MS) {
+        flushChunk(accumulated);
+      } else if (!flushTimer) {
+        flushTimer = setTimeout(() => {
+          flushTimer = null;
+          flushChunk(accumulated);
+        }, STREAM_FLUSH_MS - (now - lastFlush));
+      }
+    };
+
+    generateOpenRouterProposalStream(message, onChunk)
+      .then(async (result) => {
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+        await updateChatSession((session) => {
+          session.messages = (session.messages || []).filter((m) => !m.pending);
+          session.messages.push({ role: 'assistant', content: result.text });
+          session.model = result.model || session.model;
+        });
+        sendResponse({ success: true, ...result });
+      })
+      .catch(async (error) => {
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
         console.error('OpenRouter generation error:', error);
-        sendResponse({ success: false, error: error.message || 'OpenRouter request failed' });
+        const errorMsg = error.message || 'OpenRouter request failed';
+        await updateChatSession((session) => {
+          session.messages = (session.messages || []).filter((m) => !m.pending);
+          session.messages.push({ role: 'assistant', content: '\u062a\u0639\u0630\u0631 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0631\u062f: ' + errorMsg });
+        });
+        sendResponse({ success: false, error: errorMsg });
       });
     return true;
   }
