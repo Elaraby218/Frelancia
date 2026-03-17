@@ -8,6 +8,12 @@ function checkForAutofill() {
     handleAutofillSequence();
 }
 
+chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !changes.mostaql_pending_autofill) return;
+    if (!changes.mostaql_pending_autofill.newValue) return;
+    handleAutofillSequence();
+});
+
 function handleAutofillSequence() {
     if (!isContextValid()) return;
 

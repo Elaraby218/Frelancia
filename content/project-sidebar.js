@@ -240,52 +240,46 @@ function setButtonUntracked(btn) {
     btn.title = 'مراقبة هذا المشروع';
 }
 
-function handleChatGptClick(promptId) {
-    if (!isContextValid()) {
-        console.warn('Mostaql Ext: Extension context invalidated. Please refresh the page.');
-        return;
-    }
-    console.log('handleChatGptClick called with ID:', promptId);
-
+function buildPromptFromTemplate(promptId, callback) {
     const projectData = extractProjectData();
     const description = getProjectDescription();
-
-    console.log('--- Mostaql Ext Data Debug ---');
-    console.log('Title:', projectData.title);
-    console.log('URL:', projectData.url);
-    console.log('Description:', description);
-    console.log('Tags:', projectData.tags);
-    console.log('Client Name:', projectData.clientName);
-    console.log('Budget:', projectData.budget);
-    console.log('Duration:', projectData.duration);
-    console.log('Publish Date:', projectData.publishDate);
-    console.log('Status:', projectData.status);
-    console.log('Project ID:', projectData.id);
-    console.log('Category:', projectData.category);
-    console.log('Hiring Rate:', projectData.hiringRate);
-    console.log('Open Projects:', projectData.openProjects);
-    console.log('Underway Projects:', projectData.underwayProjects);
-    console.log('Client Joined:', projectData.clientJoined);
-    console.log('Client Type:', projectData.clientType);
-    console.log('Communications:', projectData.communications);
-    console.log('------------------------------');
 
     if (!description) {
         alert('لم يتم العثور على وصف المشروع.');
         return;
     }
 
+    const processTemplate = (content) => {
+        const prompt = content
+            .replace(/{title}/g, projectData.title)
+            .replace(/{url}/g, projectData.url)
+            .replace(/{description}/g, description)
+            .replace(/{tags}/g, projectData.tags)
+            .replace(/{client_name}/g, projectData.clientName)
+            .replace(/{budget}/g, projectData.budget)
+            .replace(/{duration}/g, projectData.duration)
+            .replace(/{publish_date}/g, projectData.publishDate)
+            .replace(/{project_status}/g, projectData.status)
+            .replace(/{project_id}/g, projectData.id)
+            .replace(/{category}/g, projectData.category)
+            .replace(/{hiring_rate}/g, projectData.hiringRate)
+            .replace(/{open_projects}/g, projectData.openProjects)
+            .replace(/{underway_projects}/g, projectData.underwayProjects)
+            .replace(/{client_joined}/g, projectData.clientJoined)
+            .replace(/{client_type}/g, projectData.clientType);
+
+        callback({ prompt, projectData, description });
+    };
+
     loadPrompts((prompts) => {
-        let templateContent = '';
         const selectedPrompt = prompts.find(p => p.id === promptId);
-        console.log('Prompts loaded:', prompts.length);
-        console.log('Selected prompt found:', !!selectedPrompt);
 
         if (selectedPrompt) {
-            templateContent = selectedPrompt.content;
-            processTemplate(templateContent);
-        } else if (promptId === 'default_proposal') {
-            console.warn('Default prompt not modified/found locally, fetching original default.');
+            processTemplate(selectedPrompt.content);
+            return;
+        }
+
+        if (promptId === 'default_proposal') {
             chrome.runtime.sendMessage({ action: 'getDefaultPrompts' }, (response) => {
                 const defaults = (response && response.prompts) ? response.prompts : [];
                 const def = defaults.find(d => d.id === 'default_proposal');
@@ -296,38 +290,68 @@ function handleChatGptClick(promptId) {
                 }
             });
             return;
-        } else {
-            console.error('Prompt ID not found:', promptId);
-            alert('خطأ: لم يتم العثور على القالب المحدد (ID: ' + promptId + '). تحقق من قائمة الأوامر.');
-            return;
         }
 
-        function processTemplate(content) {
-            let prompt = content
-                .replace(/{title}/g, projectData.title)
-                .replace(/{url}/g, projectData.url)
-                .replace(/{description}/g, description)
-                .replace(/{tags}/g, projectData.tags)
-                .replace(/{client_name}/g, projectData.clientName)
-                .replace(/{budget}/g, projectData.budget)
-                .replace(/{duration}/g, projectData.duration)
-                .replace(/{publish_date}/g, projectData.publishDate)
-                .replace(/{project_status}/g, projectData.status)
-                .replace(/{project_id}/g, projectData.id)
-                .replace(/{category}/g, projectData.category)
-                .replace(/{hiring_rate}/g, projectData.hiringRate)
-                .replace(/{open_projects}/g, projectData.openProjects)
-                .replace(/{underway_projects}/g, projectData.underwayProjects)
-                .replace(/{client_joined}/g, projectData.clientJoined)
-                .replace(/{client_type}/g, projectData.clientType);
+        alert('خطأ: لم يتم العثور على القالب المحدد (ID: ' + promptId + '). تحقق من قائمة الأوامر.');
+    });
+}
 
-            chrome.storage.local.set({ 'pendingChatGptPrompt': prompt }, () => {
-                chrome.storage.local.get(['settings'], (result) => {
-                    const settings = result.settings || {};
-                    const url = settings.aiChatUrl || 'https://chatgpt.com/';
-                    window.open(url, 'mostaql_ai_chat');
-                });
-            });
+function openChatGptPrompt(prompt, settings) {
+    chrome.storage.local.set({ pendingChatGptPrompt: prompt }, () => {
+        const url = settings.aiChatUrl || 'https://chatgpt.com/';
+        window.open(url, 'mostaql_ai_chat');
+    });
+}
+
+function openOpenRouterChat(prompt, projectData, promptId) {
+    const chatState = {
+        createdAt: Date.now(),
+        promptId: promptId,
+        initialPrompt: String(prompt || '').trim(),
+        project: {
+            id: projectData.id,
+            title: projectData.title,
+            url: projectData.url,
+            budget: projectData.budget,
+            duration: projectData.duration,
+            clientName: projectData.clientName
         }
+    };
+
+    chrome.storage.local.set({
+        openRouterPendingChat: chatState,
+        openRouterChatSession: null,
+        popupActiveTab: 'ai-chat'
+    }, () => {
+        chrome.runtime.sendMessage({ action: 'openAiPopup' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('Failed to open AI popup:', chrome.runtime.lastError.message);
+            }
+        });
+    });
+}
+
+function handleChatGptClick(promptId) {
+    if (!isContextValid()) {
+        console.warn('Mostaql Ext: Extension context invalidated. Please refresh the page.');
+        return;
+    }
+
+    buildPromptFromTemplate(promptId, ({ prompt, projectData }) => {
+        chrome.storage.local.get(['settings'], (result) => {
+            const settings = result.settings || {};
+            const provider = settings.aiProvider || 'chatgpt';
+
+            if (provider === 'openrouter') {
+                if (!settings.openRouterApiKey) {
+                    alert('يرجى إضافة مفتاح OpenRouter API من لوحة التحكم ثم حفظ الإعدادات.');
+                    return;
+                }
+                openOpenRouterChat(prompt, projectData, promptId);
+                return;
+            }
+
+            openChatGptPrompt(prompt, settings);
+        });
     });
 }
