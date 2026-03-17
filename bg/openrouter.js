@@ -4,7 +4,7 @@
 // ==========================================
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const OPENROUTER_DEFAULT_MODEL = 'openai/gpt-4o-mini';
+const OPENROUTER_DEFAULT_MODEL = 'openrouter/hunter-alpha';
 
 function extractOpenRouterMessageContent(message) {
   if (!message) return '';
@@ -104,8 +104,10 @@ async function generateOpenRouterProposal(payload) {
   }
 
   if (!response.ok) {
-    const errorMessage = result && result.error && result.error.message
-      ? result.error.message
+    console.error('OpenRouter error response:', JSON.stringify(result, null, 2));
+    const err = result && result.error;
+    const errorMessage = err
+      ? `${err.message || 'Unknown error'}${err.code ? ' (' + err.code + ')' : ''}${err.metadata ? ' — ' + JSON.stringify(err.metadata) : ''}`
       : `OpenRouter request failed with status ${response.status}`;
     throw new Error(errorMessage);
   }
@@ -157,8 +159,10 @@ async function generateOpenRouterProposalStream(payload, onChunk) {
     let errorMessage = `OpenRouter request failed with status ${response.status}`;
     try {
       const errorBody = await response.json();
-      if (errorBody && errorBody.error && errorBody.error.message) {
-        errorMessage = errorBody.error.message;
+      console.error('OpenRouter stream error response:', JSON.stringify(errorBody, null, 2));
+      const err = errorBody && errorBody.error;
+      if (err) {
+        errorMessage = `${err.message || 'Unknown error'}${err.code ? ' (' + err.code + ')' : ''}${err.metadata ? ' — ' + JSON.stringify(err.metadata) : ''}`;
       }
     } catch (_) { /* ignore parse errors */ }
     throw new Error(errorMessage);

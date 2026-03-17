@@ -235,7 +235,7 @@ async function loadPopupChatState() {
   const saved = data[CHAT_STORAGE_KEY] || null;
   const pending = data[CHAT_PENDING_KEY] || null;
 
-  popupChatState.model = settings.openRouterModel || saved?.model || 'openai/gpt-4o-mini';
+  popupChatState.model = settings.openRouterModel || saved?.model || 'openrouter/hunter-alpha';
   document.getElementById('chatModel').textContent = popupChatState.model;
 
   if (pending) {

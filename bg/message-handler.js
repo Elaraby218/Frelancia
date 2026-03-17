@@ -147,7 +147,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       const errorMsg = error.message || 'OpenRouter request failed';
       await updateChatSession((session) => {
         session.messages = (session.messages || []).filter((m) => !m.pending);
-        session.messages.push({ role: 'assistant', content: '\u062a\u0639\u0630\u0631 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0631\u062f: ' + errorMsg });
+        session.messages.push({
+          role: 'assistant',
+          content: '\u062a\u0639\u0630\u0631 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0631\u062f: ' + errorMsg +
+            '\n\n\u062c\u0631\u0628 \u062a\u063a\u064a\u064a\u0631 \u0627\u0644\u0645\u0648\u062f\u064a\u0644 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0630\u0643\u0627\u0621 \u0641\u064a \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645 (Dashboard).'
+        });
       });
       sendResponse({ success: false, error: errorMsg });
     };

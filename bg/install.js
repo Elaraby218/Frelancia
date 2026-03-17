@@ -16,7 +16,7 @@ chrome.runtime.onInstalled.addListener(() => {
       interval: 1,
       aiProvider: 'chatgpt',
       aiChatUrl: 'https://chatgpt.com/',
-      openRouterModel: 'openai/gpt-4o-mini'
+      openRouterModel: 'openrouter/hunter-alpha'
     };
 
     if (!data.settings) {

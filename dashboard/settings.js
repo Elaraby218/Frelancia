@@ -20,7 +20,7 @@ function saveAllSettings() {
         aiProvider:       getVal('aiProvider') || 'chatgpt',
         aiChatUrl:        getVal('aiChatUrl'),
         openRouterApiKey: getVal('openRouterApiKey'),
-        openRouterModel:  getVal('openRouterModel') || 'openai/gpt-4o-mini',
+        openRouterModel:  getVal('openRouterModel') || 'openrouter/hunter-alpha',
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
@@ -69,7 +69,7 @@ function applySettingsToForm(s) {
     setVal('aiProvider',        s.aiProvider || 'chatgpt');
     setVal('aiChatUrl',         s.aiChatUrl || 'https://chatgpt.com/');
     setVal('openRouterApiKey',  s.openRouterApiKey || '');
-    setVal('openRouterModel',   s.openRouterModel || 'openai/gpt-4o-mini');
+    setVal('openRouterModel',   s.openRouterModel || 'openrouter/hunter-alpha');
     setVal('openRouterModelPreset', '');
     setVal('quietHoursEnabled', s.quietHoursEnabled === true);
     setVal('quietHoursStart',   s.quietHoursStart);
