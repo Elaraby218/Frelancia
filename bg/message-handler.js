@@ -89,6 +89,34 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  if (message.action === 'generateOpenRouterProposal') {
+    generateOpenRouterProposal(message)
+      .then((result) => sendResponse({ success: true, ...result }))
+      .catch((error) => {
+        console.error('OpenRouter generation error:', error);
+        sendResponse({ success: false, error: error.message || 'OpenRouter request failed' });
+      });
+    return true;
+  }
+
+  if (message.action === 'openAiPopup') {
+    chrome.storage.local.set({ popupActiveTab: 'ai-chat' }, async () => {
+      try {
+        if (chrome.action && chrome.action.openPopup) {
+          await chrome.action.openPopup();
+          sendResponse({ success: true });
+          return;
+        }
+
+        sendResponse({ success: false, error: 'Popup API unavailable' });
+      } catch (error) {
+        console.error('Open popup error:', error);
+        sendResponse({ success: false, error: error.message || 'Failed to open popup' });
+      }
+    });
+    return true;
+  }
+
   if (message.action === 'download_media') {
     const { url, filename, content } = message;
 
