@@ -32,6 +32,7 @@ importScripts(
   'bg/fetcher.js',         // fetchJobs, fetchProjectDetails, cleanTitle
   'bg/tracker.js',         // checkTrackedProjects
   'bg/job-checker.js',     // checkForNewJobs
+  'bg/openrouter.js',      // generateOpenRouterProposal
   'bg/signalr.js',         // initializeSignalR
   'bg/install.js',         // onInstalled handler
   'bg/alarm-handler.js',   // onAlarm handler
