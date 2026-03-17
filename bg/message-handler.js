@@ -108,16 +108,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     let lastFlush = 0;
     let flushTimer = null;
     let flushInFlight = Promise.resolve();
+    let finalized = false;
 
     const flushChunk = (text) => {
+      if (finalized) return;
       lastFlush = Date.now();
       flushInFlight = flushInFlight.then(async () => {
+        if (finalized) return;
         try {
           await updateChatSession((session) => {
-            const msgs = session.messages || [];
-            const pendingIdx = msgs.findIndex((m) => m.pending);
+            if (!session.messages) session.messages = [];
+            const pendingIdx = session.messages.findIndex((m) => m.pending);
             if (pendingIdx !== -1) {
-              msgs[pendingIdx] = { role: 'assistant', content: text, pending: true };
+              session.messages[pendingIdx] = { role: 'assistant', content: text, pending: true };
             }
           });
         } catch (e) {
@@ -127,6 +130,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     };
 
     const onChunk = (accumulated) => {
+      if (finalized) return;
       const now = Date.now();
       if (now - lastFlush >= STREAM_FLUSH_MS) {
         flushChunk(accumulated);
@@ -139,6 +143,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     };
 
     const finalize = async (result) => {
+      finalized = true;
       if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
       await flushInFlight;
       await updateChatSession((session) => {
@@ -150,6 +155,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     };
 
     const fail = async (error) => {
+      finalized = true;
       if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
       await flushInFlight;
       console.error('OpenRouter generation error:', error);
