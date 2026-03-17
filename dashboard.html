@@ -332,12 +332,66 @@
                     <div class="settings-section">
                         <div class="section-header">
                             <i class="fas fa-robot"></i>
-                            <h3>رابط الذكاء الاصطناعي</h3>
+                            <h3>تكامل الذكاء الاصطناعي</h3>
                         </div>
                         <div class="form-group">
-                            <label>رابط الشات المفضل</label>
-                            <input type="text" id="aiChatUrl" class="form-control" placeholder="https://chatgpt.com/" dir="ltr">
-                            <p class="help-text">يمكنك استخدام رابط مخصص أو رابط مشروع ChatGPT بعينه.</p>
+                            <label>مزود الذكاء الاصطناعي</label>
+                            <select id="aiProvider" class="form-control">
+                                <option value="chatgpt">ChatGPT (الطريقة الحالية)</option>
+                                <option value="openrouter">OpenRouter API</option>
+                            </select>
+                            <p class="help-text">يمكنك التبديل بين فتح ChatGPT تلقائياً أو توليد العرض مباشرة عبر OpenRouter بنفس القوالب الحالية.</p>
+                        </div>
+                        <div id="chatgptSettingsGroup">
+                            <div class="form-group">
+                                <label>رابط الشات المفضل</label>
+                                <input type="text" id="aiChatUrl" class="form-control" placeholder="https://chatgpt.com/" dir="ltr">
+                                <p class="help-text">يمكنك استخدام رابط مخصص أو رابط مشروع ChatGPT بعينه.</p>
+                            </div>
+                        </div>
+                        <div id="openRouterSettingsGroup" class="hidden">
+                            <div class="provider-card">
+                                <div class="provider-card-header">
+                                    <div>
+                                        <strong>OpenRouter API</strong>
+                                        <p class="help-text">نفس القوالب الحالية، لكن التوليد يتم داخل الإضافة مباشرة بدون الاعتماد على أتمتة ChatGPT.</p>
+                                    </div>
+                                    <span class="provider-badge">API</span>
+                                </div>
+                                <div class="form-group">
+                                    <label>مفتاح OpenRouter API</label>
+                                    <div class="inline-input-row">
+                                        <input type="password" id="openRouterApiKey" class="form-control" placeholder="sk-or-v1-..." dir="ltr" autocomplete="off">
+                                        <button type="button" id="toggleOpenRouterApiKey" class="btn-secondary compact-btn">
+                                            <i class="fas fa-eye"></i>
+                                            <span>إظهار</span>
+                                        </button>
+                                    </div>
+                                    <p class="help-text">يُحفظ محلياً داخل Chrome Storage فقط، ويُستخدم لإرسال نفس الـ prompt إلى OpenRouter.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>قائمة الموديلات المجانية الشائعة</label>
+                                    <select id="openRouterModelPreset" class="form-control" dir="ltr">
+                                        <option value="">اختر موديل مجاني شائع...</option>
+                                        <option value="meta-llama/llama-3.3-70b-instruct:free">Meta: Llama 3.3 70B Instruct (free)</option>
+                                        <option value="mistralai/mistral-small-3.1-24b-instruct:free">Mistral: Mistral Small 3.1 24B (free)</option>
+                                        <option value="google/gemma-3-27b-it:free">Google: Gemma 3 27B (free)</option>
+                                        <option value="google/gemma-3-12b-it:free">Google: Gemma 3 12B (free)</option>
+                                        <option value="qwen/qwen3-next-80b-a3b-instruct:free">Qwen: Qwen3 Next 80B A3B Instruct (free)</option>
+                                        <option value="z-ai/glm-4.5-air:free">Z.ai: GLM 4.5 Air (free)</option>
+                                        <option value="openai/gpt-oss-120b:free">OpenAI: gpt-oss-120b (free)</option>
+                                        <option value="openai/gpt-oss-20b:free">OpenAI: gpt-oss-20b (free)</option>
+                                        <option value="minimax/minimax-m2.5:free">MiniMax: MiniMax M2.5 (free)</option>
+                                        <option value="nousresearch/hermes-3-llama-3.1-405b:free">Nous: Hermes 3 405B Instruct (free)</option>
+                                    </select>
+                                    <p class="help-text">تم اختيار هذه الأسماء بعد التحقق من معرفات موديلات OpenRouter المجانية الحالية.</p>
+                                </div>
+                                <div class="form-group">
+                                    <label>اسم الموديل</label>
+                                    <input type="text" id="openRouterModel" class="form-control" placeholder="openai/gpt-4o-mini" dir="ltr">
+                                    <p class="help-text">أدخل أي موديل متاح في OpenRouter. الافتراضي: <code>openai/gpt-4o-mini</code>.</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>تكرار الفحص (بالدقائق)</label>
