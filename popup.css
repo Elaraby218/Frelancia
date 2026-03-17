@@ -177,6 +177,7 @@ body {
 .btn.primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(35, 134, 200, 0.35);
+  filter: brightness(0.9);
 }
 
 .btn.secondary {
@@ -263,7 +264,7 @@ body.popup-mode {
   width: 340px;
   min-height: 420px;
   height: auto;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 body.popup-mode .minimal-container {
