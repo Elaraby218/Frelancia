@@ -8,13 +8,15 @@
     "alarms",
     "storage",
     "offscreen",
-    "downloads"
+    "downloads",
+    "tabs"
   ],
   "host_permissions": [
     "https://mostaql.com/*",
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
-    "https://frelancia.runasp.net/*"
+    "https://frelancia.runasp.net/*",
+    "https://openrouter.ai/*"
   ],
   "content_scripts": [
     {
