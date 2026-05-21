@@ -9,6 +9,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'playSound') {
     playNotificationSound().then(() => sendResponse({ success: true }));
     return true;
+  } else if (message.action === 'playMessageSound') {
+    playMessageSound().then(() => sendResponse({ success: true }));
+    return true;
   } else if (message.action === 'parseJobs') {
     const jobs = parseMostaqlHTML(message.html);
     sendResponse({ success: true, jobs: jobs });
@@ -174,6 +177,21 @@ async function playNotificationSound() {
     }
   } catch (err) {
     console.error('Audio file playback failed, falling back to beep:', err);
+    await playBeep();
+  }
+}
+
+async function playMessageSound() {
+  try {
+    const audioEl = document.getElementById('messageSound');
+    if (audioEl) {
+      audioEl.currentTime = 0;
+      await audioEl.play();
+    } else {
+      await playBeep();
+    }
+  } catch (err) {
+    console.error('Message audio playback failed:', err);
     await playBeep();
   }
 }

@@ -24,7 +24,8 @@ function saveAllSettings() {
         interval:         parseInt(getVal('checkInterval'))  || 1,
         systemEnabled:    getVal('systemToggle'),
         notificationMode: getVal('notificationMode') || 'auto',
-        signalrServerUrl: getVal('signalrServerUrl') || ''
+        signalrServerUrl: getVal('signalrServerUrl') || '',
+        messageSoundEnabled: getVal('messageSoundEnabled')
     };
 
     const proposalTemplate = document.getElementById('proposalTemplate').value;
@@ -71,6 +72,7 @@ function applySettingsToForm(s) {
     setVal('systemToggle',      s.systemEnabled !== false);
     setVal('notificationMode',  s.notificationMode || 'auto');
     setVal('signalrServerUrl',  s.signalrServerUrl || '');
+    setVal('messageSoundEnabled', s.messageSoundEnabled !== false);
 }
 
 function exportBackup() {

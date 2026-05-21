@@ -30,6 +30,7 @@
         "content/export.js",
         "content/home.js",
         "content/profile.js",
+        "content/message-notifier.js",
         "content/init.js"
       ],
       "css": [

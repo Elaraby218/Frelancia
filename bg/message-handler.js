@@ -33,6 +33,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.action === 'playMessageSound') {
+    playMessageSound();
+    sendResponse({ success: true });
+    return true;
+  }
+
   if (message.action === 'updateAlarm') {
     const interval = parseInt(message.interval) || 1;
     chrome.alarms.clear('checkJobs');

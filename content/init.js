@@ -48,6 +48,7 @@ function startObserverOnce() {
 
 function initExtension() {
     lastPath = location.pathname;
+    startMessageNotifier();
     runInjectors();
     startObserverOnce();
 }

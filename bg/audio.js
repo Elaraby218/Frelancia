@@ -11,6 +11,10 @@ async function playTrackedSound() {
   await triggerOffscreenAction('playTrackedSound');
 }
 
+async function playMessageSound() {
+  await triggerOffscreenAction('playMessageSound');
+}
+
 async function triggerOffscreenAction(action) {
   try {
     await setupOffscreenDocument();
