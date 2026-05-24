@@ -15,8 +15,9 @@ function runInjectors() {
         checkForAutofill();
     }
 
-    if (page === 'message') {
+    if (page === 'message' || page === 'messages') {
         injectMessageExporter();
+        injectClipboardPaste();
     }
 
     if (page === 'home') {
