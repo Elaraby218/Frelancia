@@ -30,6 +30,7 @@
         "content/export.js",
         "content/home.js",
         "content/profile.js",
+        "content/clipboard.js",
         "content/init.js"
       ],
       "css": [
@@ -61,5 +62,15 @@
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "content/clipboard-main.js"
+      ],
+      "matches": [
+        "https://mostaql.com/*"
+      ]
+    }
+  ]
 }
