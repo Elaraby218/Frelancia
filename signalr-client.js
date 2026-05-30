@@ -221,8 +221,8 @@ class SignalRClient {
                 console.log(`SignalR: Showing notifications for ${validJobs.length} job(s) [NO HTTP REQUESTS MADE]`);
                 showNotification(validJobs);
 
-                if (settings.sound) {
-                    playSound();
+                if (settings.sound !== false) {
+                    playSound(settings.notificationSound || 'default');
                 }
             } else {
                 console.log('SignalR: Notifications are toggled off. Skipping alert.');

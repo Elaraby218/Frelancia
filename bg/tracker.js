@@ -52,8 +52,8 @@ async function checkTrackedProjects() {
 
           if (isEnabled) {
             showTrackedNotification(project, changeMsg);
-            if (settings.sound) {
-              playTrackedSound();
+            if (settings.sound !== false) {
+              playTrackedSound(settings.trackedSound || 'default');
             }
           } else {
             console.log('Notifications are toggled off. Skipping alert for tracked project update.');

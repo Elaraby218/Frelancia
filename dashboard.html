@@ -397,6 +397,52 @@
 
                     <div class="settings-section">
                         <div class="section-header">
+                            <i class="fas fa-volume-up"></i>
+                            <h3>صوت التنبيهات</h3>
+                        </div>
+                        <div class="toggle-row">
+                            <span>تفعيل أصوات التنبيهات</span>
+                            <label class="switch">
+                                <input type="checkbox" id="soundEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>صوت الإشعار للمشاريع الجديدة</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="notificationSound" class="form-control" style="flex: 1;">
+                                    <option value="default">الافتراضي (ملف صوتي)</option>
+                                    <option value="chime">رنين كلاسيكي (Chime)</option>
+                                    <option value="digital">تنبيه رقمي (Digital)</option>
+                                    <option value="bell">جرس هادئ (Bell)</option>
+                                    <option value="arcade">أركيد ريترو (Retro Arcade)</option>
+                                    <option value="marimba">ماريمبا ناعمة (Marimba)</option>
+                                </select>
+                                <button type="button" id="previewNewJobSoundBtn" class="btn-secondary" style="padding: 10px 15px;" title="تشغيل تجريبي">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 15px;">
+                            <label>صوت إشعار تحديث المشاريع المتابعة</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="trackedSound" class="form-control" style="flex: 1;">
+                                    <option value="default">الافتراضي (ثلاث رنات)</option>
+                                    <option value="chime">رنين كلاسيكي (Chime)</option>
+                                    <option value="digital">تنبيه رقمي (Digital)</option>
+                                    <option value="bell">جرس هادئ (Bell)</option>
+                                    <option value="arcade">أركيد ريترو (Retro Arcade)</option>
+                                    <option value="marimba">ماريمبا ناعمة (Marimba)</option>
+                                </select>
+                                <button type="button" id="previewTrackedSoundBtn" class="btn-secondary" style="padding: 10px 15px;" title="تشغيل تجريبي">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <div class="section-header">
                             <i class="fas fa-vial"></i>
                             <h3>أدوات الفحص</h3>
                         </div>

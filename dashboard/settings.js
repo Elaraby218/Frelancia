@@ -21,6 +21,9 @@ function saveAllSettings() {
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
+        sound:            getVal('soundEnabled'),
+        notificationSound: getVal('notificationSound') || 'default',
+        trackedSound:      getVal('trackedSound') || 'default',
         interval:         parseInt(getVal('checkInterval'))  || 1,
         systemEnabled:    getVal('systemToggle'),
         notificationMode: getVal('notificationMode') || 'auto',
@@ -64,6 +67,9 @@ function applySettingsToForm(s) {
     setVal('cat-ai',            s.ai !== false);
     setVal('cat-all',           s.all !== false);
     setVal('aiChatUrl',         s.aiChatUrl || 'https://chatgpt.com/');
+    setVal('soundEnabled',      s.sound !== false);
+    setVal('notificationSound', s.notificationSound || 'default');
+    setVal('trackedSound',      s.trackedSound || 'default');
     setVal('quietHoursEnabled', s.quietHoursEnabled === true);
     setVal('quietHoursStart',   s.quietHoursStart);
     setVal('quietHoursEnd',     s.quietHoursEnd);

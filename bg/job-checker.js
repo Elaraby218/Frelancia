@@ -146,7 +146,7 @@ async function checkForNewJobs() {
       const isEnabled = data.notificationsEnabled !== false;
       if (isEnabled) {
         showNotification(qualityJobs);
-        if (settings.sound) playSound();
+        if (settings.sound !== false) playSound(settings.notificationSound || 'default');
       } else {
         console.log('Notifications are toggled off. Skipping alert for new jobs.');
       }

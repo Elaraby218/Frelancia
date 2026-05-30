@@ -63,6 +63,28 @@ function setupEventListeners() {
         });
     }
 
+    // Sound previews
+    const previewNewJobSoundBtn = document.getElementById('previewNewJobSoundBtn');
+    if (previewNewJobSoundBtn) {
+        previewNewJobSoundBtn.addEventListener('click', () => {
+            const selectEl = document.getElementById('notificationSound');
+            const selectedSound = selectEl ? selectEl.value : 'default';
+            chrome.runtime.sendMessage({ action: 'playPreview', sound: selectedSound });
+        });
+    }
+
+    const previewTrackedSoundBtn = document.getElementById('previewTrackedSoundBtn');
+    if (previewTrackedSoundBtn) {
+        previewTrackedSoundBtn.addEventListener('click', () => {
+            const selectEl = document.getElementById('trackedSound');
+            let selectedSound = selectEl ? selectEl.value : 'default';
+            if (selectedSound === 'default') {
+                selectedSound = 'default_tracked';
+            }
+            chrome.runtime.sendMessage({ action: 'playPreview', sound: selectedSound });
+        });
+    }
+
     // System toggle — auto-save immediately on change
     const systemToggle = document.getElementById('systemToggle');
     if (systemToggle) {

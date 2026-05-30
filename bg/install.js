@@ -15,6 +15,8 @@ chrome.runtime.onInstalled.addListener(() => {
         ai: true,
         all: true,
         sound: true,
+        notificationSound: 'default',
+        trackedSound: 'default',
         interval: 1
       };
     }

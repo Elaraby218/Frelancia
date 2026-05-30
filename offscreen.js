@@ -7,7 +7,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(`Offscreen: Received action: ${message.action}`);
 
   if (message.action === 'playSound') {
-    playNotificationSound().then(() => sendResponse({ success: true }));
+    playNotificationSound(message.sound).then(() => sendResponse({ success: true }));
     return true;
   } else if (message.action === 'parseJobs') {
     const jobs = parseMostaqlHTML(message.html);
@@ -16,7 +16,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const data = parseProjectDetails(message.html);
     sendResponse({ success: true, data: data });
   } else if (message.action === 'playTrackedSound') {
-    playTrackedSound().then(() => sendResponse({ success: true }));
+    playTrackedSound(message.sound).then(() => sendResponse({ success: true }));
+    return true;
+  } else if (message.action === 'playPreview') {
+    playPreviewSound(message.sound).then(() => sendResponse({ success: true }));
     return true;
   }
 });
@@ -163,50 +166,192 @@ function parseProjectDetails(html) {
     return { status, communications, hiringRate, description, duration, budget, registrationDate };
 }
 
-async function playNotificationSound() {
+async function playNotificationSound(soundName = 'default') {
   try {
-    const audioEl = document.getElementById('notificationSound');
-    if (audioEl) {
-      audioEl.currentTime = 0;
-      await audioEl.play();
+    if (soundName === 'default') {
+      const audioEl = document.getElementById('notificationSound');
+      if (audioEl) {
+        audioEl.currentTime = 0;
+        await audioEl.play();
+      } else {
+        await playSynthesizedSound('chime');
+      }
     } else {
-      await playBeep();
+      await playSynthesizedSound(soundName);
     }
   } catch (err) {
-    console.error('Audio file playback failed, falling back to beep:', err);
-    await playBeep();
+    console.error('Audio file playback failed, falling back to chime synth:', err);
+    await playSynthesizedSound('chime');
   }
 }
 
-// Create a notification sound using Web Audio API (as fallback)
-async function playBeep() {
+async function playTrackedSound(soundName = 'default') {
+  try {
+    if (soundName === 'default') {
+      await fallbackPlayTrackedSound();
+    } else {
+      await playSynthesizedSound(soundName);
+    }
+  } catch (err) {
+    console.error('Error playing tracked sound:', err);
+    await fallbackPlayTrackedSound();
+  }
+}
+
+async function playPreviewSound(soundName) {
+  try {
+    if (soundName === 'default_tracked') {
+      await playTrackedSound('default');
+    } else {
+      await playNotificationSound(soundName);
+    }
+  } catch (err) {
+    console.error('Error playing preview sound:', err);
+  }
+}
+
+async function playSynthesizedSound(soundName) {
   try {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     if (audioContext.state === 'suspended') {
       await audioContext.resume();
     }
 
-    // Basic notification: two beeps (low then high)
-    playTone(audioContext, 800, 0, 0.15);
-    playTone(audioContext, 1000, 0.2, 0.15);
+    const now = audioContext.currentTime;
 
-  } catch (error) {
-    console.error('Error playing beep:', error);
-  }
-}
-
-async function playTrackedSound() {
-  try {
-    const audioEl = document.getElementById('notificationSound');
-    if (audioEl) {
-      audioEl.currentTime = 0;
-      await audioEl.play();
-    } else {
-      await fallbackPlayTrackedSound();
+    switch (soundName) {
+      case 'chime': {
+        const freqs = [659.25, 830.61, 987.77];
+        freqs.forEach((freq, idx) => {
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          osc.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          osc.frequency.value = freq;
+          osc.type = 'triangle';
+          
+          const start = now + idx * 0.08;
+          const duration = 0.8 - idx * 0.08;
+          
+          gainNode.gain.setValueAtTime(0, start);
+          gainNode.gain.linearRampToValueAtTime(0.25, start + 0.05);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          
+          osc.start(start);
+          osc.stop(start + duration);
+        });
+        break;
+      }
+      
+      case 'digital': {
+        const times = [0, 0.12];
+        const freqs = [1046.50, 1318.51];
+        times.forEach((timeOffset, idx) => {
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          osc.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          osc.frequency.value = freqs[idx];
+          osc.type = 'sine';
+          
+          const start = now + timeOffset;
+          const duration = 0.08;
+          
+          gainNode.gain.setValueAtTime(0.2, start);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          
+          osc.start(start);
+          osc.stop(start + duration);
+        });
+        break;
+      }
+      
+      case 'bell': {
+        const overtones = [880, 1760, 2640];
+        const gains = [0.2, 0.08, 0.04];
+        
+        overtones.forEach((freq, idx) => {
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          osc.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          osc.frequency.value = freq;
+          osc.type = 'sine';
+          
+          gainNode.gain.setValueAtTime(0, now);
+          gainNode.gain.linearRampToValueAtTime(gains[idx], now + 0.01);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+          
+          osc.start(now);
+          osc.stop(now + 1.2);
+        });
+        break;
+      }
+      
+      case 'arcade': {
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((freq, idx) => {
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          osc.connect(gainNode);
+          
+          osc.frequency.value = freq;
+          osc.type = 'sawtooth';
+          
+          const filter = audioContext.createBiquadFilter();
+          filter.type = 'lowpass';
+          filter.frequency.value = 1800;
+          
+          osc.connect(filter);
+          filter.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          const start = now + idx * 0.06;
+          const duration = 0.15;
+          
+          gainNode.gain.setValueAtTime(0.12, start);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          
+          osc.start(start);
+          osc.stop(start + duration);
+        });
+        break;
+      }
+      
+      case 'marimba': {
+        const notes = [783.99, 1046.50];
+        notes.forEach((freq, idx) => {
+          const osc = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          osc.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          osc.frequency.value = freq;
+          osc.type = 'triangle';
+          
+          const start = now + idx * 0.15;
+          const duration = 0.25;
+          
+          gainNode.gain.setValueAtTime(0, start);
+          gainNode.gain.linearRampToValueAtTime(0.3, start + 0.005);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, start + duration);
+          
+          osc.start(start);
+          osc.stop(start + duration);
+        });
+        break;
+      }
     }
-  } catch (err) {
-    console.error('Error playing tracked sound:', err);
-    await fallbackPlayTrackedSound();
+  } catch (error) {
+    console.error('Error in playSynthesizedSound:', error);
   }
 }
 
@@ -217,13 +362,11 @@ async function fallbackPlayTrackedSound() {
       await audioContext.resume();
     }
 
-    // Tracked update: 三 sequence of beeps (high-high-low) or distinct pattern
     playTone(audioContext, 1200, 0, 0.1);
     playTone(audioContext, 1200, 0.15, 0.1);
     playTone(audioContext, 1500, 0.3, 0.2);
-
   } catch (error) {
-    console.error('Error playing tracked sound:', error);
+    console.error('Error playing tracked beep:', error);
   }
 }
 

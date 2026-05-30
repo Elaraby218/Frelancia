@@ -28,7 +28,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'testSound') {
-    playSound();
+    chrome.storage.local.get(['settings'], (data) => {
+      const settings = data.settings || {};
+      playSound(settings.notificationSound || 'default');
+    });
+    sendResponse({ success: true });
+    return true;
+  }
+
+  if (message.action === 'playPreview') {
+    playPreview(message.sound);
     sendResponse({ success: true });
     return true;
   }
