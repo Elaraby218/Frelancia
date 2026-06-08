@@ -332,17 +332,66 @@
                     <div class="settings-section">
                         <div class="section-header">
                             <i class="fas fa-robot"></i>
-                            <h3>رابط الذكاء الاصطناعي</h3>
+                            <h3>إعدادات الذكاء الاصطناعي والفحص</h3>
                         </div>
                         <div class="form-group">
-                            <label>رابط الشات المفضل</label>
+                            <label>محرك الذكاء الاصطناعي (AI Engine)</label>
+                            <select id="aiEngine" class="form-control">
+                                <option value="chatgpt">ChatGPT (فتح نافذة خارجية)</option>
+                                <option value="gemini">Gemini API (توليد تلقائي فوري)</option>
+                            </select>
+                            <p class="help-text">اختر ChatGPT للاعتماد على النافذة الخارجية كما في السابق، أو Gemini API لتوليد العرض فورياً داخل الصفحة.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>رابط الشات المفضل (لـ ChatGPT)</label>
                             <input type="text" id="aiChatUrl" class="form-control" placeholder="https://chatgpt.com/" dir="ltr">
-                            <p class="help-text">يمكنك استخدام رابط مخصص أو رابط مشروع ChatGPT بعينه.</p>
+                            <p class="help-text">رابط مخصص أو رابط مشروع ChatGPT بعينه.</p>
                         </div>
                         <div class="form-group">
                             <label>تكرار الفحص (بالدقائق)</label>
                             <input type="number" id="checkInterval" class="form-control" placeholder="مثلاً: 1" min="1">
                             <p class="help-text">عدد الدقائق بين كل عملية فحص للمشاريع الجديدة.</p>
+                        </div>
+                    </div>
+
+                    <div class="settings-section" id="gemini-settings-card">
+                        <div class="section-header">
+                            <i class="fas fa-brain"></i>
+                            <h3>إعدادات Gemini API</h3>
+                        </div>
+                        <div class="form-group">
+                            <label>مفتاح API الخاص بـ Gemini (Gemini API Key)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="password" id="geminiApiKey" class="form-control" placeholder="أدخل مفتاح Gemini API هنا..." dir="ltr" style="flex: 1;">
+                                <button type="button" id="toggleGeminiKeyBtn" class="btn-secondary" style="padding: 0 12px; height: auto;">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <p class="help-text">مفتاح API من Google AI Studio لتشغيل التوليد التلقائي الفوري (سيتم استخدام المفتاح الافتراضي المدمج في حال تركه فارغاً).</p>
+                        </div>
+                        <div class="form-group">
+                            <label>نموذج Gemini المفضّل (Model)</label>
+                            <select id="geminiModel" class="form-control">
+                                <option value="gemini-2.5-flash">gemini-2.5-flash (موصى به - متوازن ومستقر وسريع جداً)</option>
+                                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (الأخف والأسرع - موفر للاستهلاك)</option>
+                                <option value="gemini-flash-latest">gemini-flash-latest (النسخة المستقرة الأحدث تلقائياً)</option>
+                                <option value="gemini-3.5-flash">gemini-3.5-flash (الأقوى والأحدث - قد يواجه ضغطاً في الطلب أحياناً)</option>
+                            </select>
+                            <p class="help-text">النموذج المستخدم لتوليد العروض. جميع هذه النماذج مجانية وخفيفة، ونوصي باستخدام gemini-2.5-flash لاستقرار تام واستجابة فورية.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>تعليمات ومعلومات مخصصة لتوليد العروض بالذكاء الاصطناعي (Custom Instructions)</label>
+                            <textarea id="geminiCustomInstructions" rows="4" class="form-control" placeholder="مثال: أنا مطور تطبيقات خبرة 4 سنوات، معرض أعمالي هو: https://... يرجى صياغة العرض بأسلوب مهني واحترافي مباشر."></textarea>
+                            <p class="help-text">ستُضاف هذه المعلومات والتعليمات المخصصة تلقائياً مع كل طلب لتوليد عرض مخصص ومناسب لخبراتك.</p>
+                        </div>
+                        <div class="form-group">
+                            <label>قالب موجه الذكاء الاصطناعي الافتراضي (AI Prompt Template)</label>
+                            <textarea id="geminiPromptTemplate" rows="6" class="form-control" placeholder="اكتب قالب الموجه الافتراضي هنا..."></textarea>
+                            <p class="help-text">
+                                يمكنك صياغة موجه مخصص للذكاء الاصطناعي. المتغيرات المتاحة هي: `{title}`, `{description}`, `{url}`, `{tags}`, `{client_name}`, `{client_type}`, `{budget}`, `{duration}`, `{publish_date}`, `{project_id}`, `{category}`, `{hiring_rate}`, `{open_projects}`, `{underway_projects}`, `{client_joined}`.
+                                <br>
+                                <em>اتركه فارغاً لاستخدام الموجه الافتراضي للنظام.</em>
+                            </p>
                         </div>
                     </div>
 

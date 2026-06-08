@@ -14,7 +14,8 @@
     "https://mostaql.com/*",
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
-    "https://frelancia.runasp.net/*"
+    "https://frelancia.runasp.net/*",
+    "https://generativelanguage.googleapis.com/*"
   ],
   "content_scripts": [
     {

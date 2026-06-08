@@ -18,6 +18,11 @@ function saveAllSettings() {
         ai:               getVal('cat-ai'),
         all:              getVal('cat-all'),
         aiChatUrl:        getVal('aiChatUrl'),
+        aiEngine:         getVal('aiEngine')                 || 'chatgpt',
+        geminiApiKey:     getVal('geminiApiKey')             || '',
+        geminiModel:      getVal('geminiModel')              || 'gemini-2.5-flash',
+        geminiCustomInstructions: getVal('geminiCustomInstructions') || '',
+        geminiPromptTemplate: getVal('geminiPromptTemplate')         || '',
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
@@ -26,9 +31,9 @@ function saveAllSettings() {
         notificationMode: getVal('notificationMode') || 'auto',
         signalrServerUrl: getVal('signalrServerUrl') || ''
     };
-
+ 
     const proposalTemplate = document.getElementById('proposalTemplate').value;
-
+ 
     chrome.storage.local.set({ settings, proposalTemplate }, () => {
         showSaveStatus();
         chrome.runtime.sendMessage({ action: 'updateAlarm', interval: settings.interval });
@@ -39,14 +44,14 @@ function saveAllSettings() {
         }
     });
 }
-
+ 
 function showSaveStatus() {
     const status = document.getElementById('saveStatus');
     if (!status) return;
     status.style.opacity = '1';
     setTimeout(() => { status.style.opacity = '0'; }, 3000);
 }
-
+ 
 function applySettingsToForm(s) {
     const setVal = (id, val) => {
         const el = document.getElementById(id);
@@ -54,7 +59,7 @@ function applySettingsToForm(s) {
         if (el.type === 'checkbox') el.checked = val;
         else el.value = val || '';
     };
-
+ 
     setVal('keywordsInclude',   s.keywordsInclude);
     setVal('keywordsExclude',   s.keywordsExclude);
     setVal('minBudget',         s.minBudget);
@@ -64,6 +69,11 @@ function applySettingsToForm(s) {
     setVal('cat-ai',            s.ai !== false);
     setVal('cat-all',           s.all !== false);
     setVal('aiChatUrl',         s.aiChatUrl || 'https://chatgpt.com/');
+    setVal('aiEngine',          s.aiEngine || 'chatgpt');
+    setVal('geminiApiKey',      s.geminiApiKey || '');
+    setVal('geminiModel',       s.geminiModel || 'gemini-2.5-flash');
+    setVal('geminiCustomInstructions', s.geminiCustomInstructions || '');
+    setVal('geminiPromptTemplate', s.geminiPromptTemplate || '');
     setVal('quietHoursEnabled', s.quietHoursEnabled === true);
     setVal('quietHoursStart',   s.quietHoursStart);
     setVal('quietHoursEnd',     s.quietHoursEnd);
@@ -71,6 +81,17 @@ function applySettingsToForm(s) {
     setVal('systemToggle',      s.systemEnabled !== false);
     setVal('notificationMode',  s.notificationMode || 'auto');
     setVal('signalrServerUrl',  s.signalrServerUrl || '');
+
+    // Manage visibility of Gemini card
+    const aiEngineEl = document.getElementById('aiEngine');
+    const geminiCard = document.getElementById('gemini-settings-card');
+    if (aiEngineEl && geminiCard) {
+        if (aiEngineEl.value === 'gemini') {
+            geminiCard.classList.remove('hidden');
+        } else {
+            geminiCard.classList.add('hidden');
+        }
+    }
 }
 
 function exportBackup() {
@@ -112,3 +133,33 @@ function importBackup(event) {
     // Reset input to allow re-importing the same file if needed
     event.target.value = '';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const aiEngineEl = document.getElementById('aiEngine');
+    const geminiCard = document.getElementById('gemini-settings-card');
+    
+    if (aiEngineEl && geminiCard) {
+        const toggleVisibility = () => {
+            if (aiEngineEl.value === 'gemini') {
+                geminiCard.classList.remove('hidden');
+            } else {
+                geminiCard.classList.add('hidden');
+            }
+        };
+        aiEngineEl.addEventListener('change', toggleVisibility);
+    }
+    
+    const toggleKeyBtn = document.getElementById('toggleGeminiKeyBtn');
+    const keyInput = document.getElementById('geminiApiKey');
+    if (toggleKeyBtn && keyInput) {
+        toggleKeyBtn.addEventListener('click', () => {
+            if (keyInput.type === 'password') {
+                keyInput.type = 'text';
+                toggleKeyBtn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+            } else {
+                keyInput.type = 'password';
+                toggleKeyBtn.innerHTML = '<i class="fas fa-eye"></i>';
+            }
+        });
+    }
+});

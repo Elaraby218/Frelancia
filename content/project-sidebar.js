@@ -275,32 +275,39 @@ function handleChatGptClick(promptId) {
         return;
     }
 
-    loadPrompts((prompts) => {
-        let templateContent = '';
-        const selectedPrompt = prompts.find(p => p.id === promptId);
-        console.log('Prompts loaded:', prompts.length);
-        console.log('Selected prompt found:', !!selectedPrompt);
+    chrome.storage.local.get(['settings'], (result) => {
+        const settings = result.settings || {};
 
-        if (selectedPrompt) {
-            templateContent = selectedPrompt.content;
-            processTemplate(templateContent);
-        } else if (promptId === 'default_proposal') {
-            console.warn('Default prompt not modified/found locally, fetching original default.');
-            chrome.runtime.sendMessage({ action: 'getDefaultPrompts' }, (response) => {
-                const defaults = (response && response.prompts) ? response.prompts : [];
-                const def = defaults.find(d => d.id === 'default_proposal');
-                if (def) {
-                    processTemplate(def.content);
+        loadPrompts((prompts) => {
+            let templateContent = '';
+            const selectedPrompt = prompts.find(p => p.id === promptId);
+            console.log('Prompts loaded:', prompts.length);
+            console.log('Selected prompt found:', !!selectedPrompt);
+
+            if (selectedPrompt) {
+                templateContent = selectedPrompt.content;
+                processTemplate(templateContent);
+            } else if (promptId === 'default_proposal') {
+                if (settings.geminiPromptTemplate && settings.geminiPromptTemplate.trim() !== '') {
+                    processTemplate(settings.geminiPromptTemplate);
                 } else {
-                    alert('خطأ: تعذر تحميل القالب الافتراضي.');
+                    console.warn('Default prompt not modified/found locally, fetching original default.');
+                    chrome.runtime.sendMessage({ action: 'getDefaultPrompts' }, (response) => {
+                        const defaults = (response && response.prompts) ? response.prompts : [];
+                        const def = defaults.find(d => d.id === 'default_proposal');
+                        if (def) {
+                            processTemplate(def.content);
+                        } else {
+                            alert('خطأ: تعذر تحميل القالب الافتراضي.');
+                        }
+                    });
                 }
-            });
-            return;
-        } else {
-            console.error('Prompt ID not found:', promptId);
-            alert('خطأ: لم يتم العثور على القالب المحدد (ID: ' + promptId + '). تحقق من قائمة الأوامر.');
-            return;
-        }
+                return;
+            } else {
+                console.error('Prompt ID not found:', promptId);
+                alert('خطأ: لم يتم العثور على القالب المحدد (ID: ' + promptId + '). تحقق من قائمة الأوامر.');
+                return;
+            }
 
         function processTemplate(content) {
             let prompt = content
@@ -321,13 +328,95 @@ function handleChatGptClick(promptId) {
                 .replace(/{client_joined}/g, projectData.clientJoined)
                 .replace(/{client_type}/g, projectData.clientType);
 
-            chrome.storage.local.set({ 'pendingChatGptPrompt': prompt }, () => {
-                chrome.storage.local.get(['settings'], (result) => {
-                    const settings = result.settings || {};
-                    const url = settings.aiChatUrl || 'https://chatgpt.com/';
-                    window.open(url, 'mostaql_ai_chat');
-                });
+            chrome.storage.local.get(['settings'], (result) => {
+                const settings = result.settings || {};
+                const aiEngine = settings.aiEngine || 'chatgpt';
+
+                if (aiEngine === 'gemini') {
+                    const mainBtn = document.getElementById('chatgpt-main-btn');
+                    let originalBtnHtml = '';
+                    if (mainBtn) {
+                        originalBtnHtml = mainBtn.innerHTML;
+                        mainBtn.style.pointerEvents = 'none';
+                        mainBtn.style.opacity = '0.7';
+                        mainBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> جاري التوليد...';
+                    }
+
+                    let finalPrompt = prompt;
+                    if (settings.geminiCustomInstructions && settings.geminiCustomInstructions.trim() !== '') {
+                        finalPrompt += '\n\nمعلومات وتوجيهات إضافية من المستقل (يرجى دمجها والتزامها في صياغة العرض):\n' + settings.geminiCustomInstructions.trim();
+                    }
+
+                    chrome.runtime.sendMessage({ action: 'generateProposalWithGemini', prompt: finalPrompt }, (response) => {
+                        if (mainBtn) {
+                            mainBtn.style.pointerEvents = 'auto';
+                            mainBtn.style.opacity = '1';
+                            mainBtn.innerHTML = originalBtnHtml;
+                        }
+
+                        if (chrome.runtime.lastError) {
+                            console.error('Runtime error:', chrome.runtime.lastError);
+                            alert('حدث خطأ في الاتصال بالإضافة: ' + chrome.runtime.lastError.message);
+                            return;
+                        }
+
+                        if (response && response.success) {
+                            const generatedText = response.proposal;
+                            const proposalTextarea = document.querySelector('#bid__details') ||
+                                document.querySelector('#description') ||
+                                document.querySelector('textarea[name="details"]') ||
+                                document.querySelector('textarea[name="description"]') ||
+                                document.querySelector('#proposal-description');
+
+                            if (proposalTextarea) {
+                                proposalTextarea.focus();
+                                proposalTextarea.value = generatedText;
+                                proposalTextarea.classList.add('mostaql-autofilled');
+
+                                const triggerEvents = (el) => {
+                                    el.dispatchEvent(new Event('focus', { bubbles: true }));
+                                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                                    el.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true }));
+                                    el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
+                                    el.dispatchEvent(new KeyboardEvent('keypress', { bubbles: true }));
+                                    setTimeout(() => {
+                                        el.dispatchEvent(new Event('blur', { bubbles: true }));
+                                    }, 50);
+                                };
+                                triggerEvents(proposalTextarea);
+
+                                const form = document.querySelector('#add-proposal-form') || proposalTextarea.closest('form') || proposalTextarea.parentElement;
+                                if (form) {
+                                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+
+                                const toast = document.createElement('div');
+                                toast.className = 'mostaql-autofill-toast';
+                                toast.innerHTML = '<i class="fa fa-robot"></i> <span>تم توليد عرض الذكاء الاصطناعي بنجاح وكتابته!</span>';
+                                document.body.appendChild(toast);
+
+                                setTimeout(() => toast.classList.add('show'), 100);
+                                setTimeout(() => {
+                                    toast.classList.remove('show');
+                                    setTimeout(() => toast.remove(), 500);
+                                }, 5000);
+                            } else {
+                                alert('تم توليد العرض بنجاح ولكن لم يتم العثور على حقل النص في الصفحة لكتابته. العرض هو:\n\n' + generatedText);
+                            }
+                        } else {
+                            const err = (response && response.error) ? response.error : 'فشل غير معروف أثناء توليد العرض';
+                            alert('حدث خطأ أثناء الاتصال بـ Gemini:\n' + err);
+                        }
+                    });
+                } else {
+                    chrome.storage.local.set({ 'pendingChatGptPrompt': prompt }, () => {
+                        const url = settings.aiChatUrl || 'https://chatgpt.com/';
+                        window.open(url, 'mostaql_ai_chat');
+                    });
+                }
             });
         }
+    });
     });
 }

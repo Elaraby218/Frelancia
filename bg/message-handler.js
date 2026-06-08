@@ -158,4 +158,75 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
   }
+
+  if (message.action === 'generateProposalWithGemini') {
+    const prompt = message.prompt;
+    chrome.storage.local.get(['settings'], (data) => {
+      const settings = data.settings || {};
+      const apiKey = settings.geminiApiKey || (typeof LOCAL_GEMINI_KEY !== 'undefined' ? LOCAL_GEMINI_KEY : '');
+      const model = settings.geminiModel || 'gemini-2.5-flash';
+
+      if (!apiKey) {
+        sendResponse({ success: false, error: 'مفتاح API الخاص بـ Gemini غير مهيأ. يرجى تهيئته في الإعدادات المتقدمة.' });
+        return;
+      }
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }],
+          safetySettings: [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+          ]
+        })
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(errJson => {
+            const errMsg = errJson.error?.message || response.statusText || 'خطأ غير معروف';
+            throw new Error(errMsg);
+          }).catch(e => {
+            throw new Error(e.message || `HTTP error! Status: ${response.status}`);
+          });
+        }
+        return response.json();
+      })
+      .then(result => {
+        const candidate = result.candidates?.[0];
+        const text = candidate?.content?.parts?.[0]?.text;
+        if (text) {
+          sendResponse({ success: true, proposal: text });
+        } else {
+          let errorMsg = 'استجابة فارغة أو غير متوقعة من Gemini API';
+          if (candidate && candidate.finishReason && candidate.finishReason !== 'STOP') {
+            if (candidate.finishReason === 'SAFETY') {
+              errorMsg = 'تم حظر توليد العرض بواسطة فلاتر الأمان لـ Gemini. قد يحتوي وصف المشروع على كلمات حساسة.';
+            } else if (candidate.finishReason === 'RECITATION') {
+              errorMsg = 'تم حظر توليد العرض بسبب تكرار نصوص محمية بحقوق النشر.';
+            } else {
+              errorMsg = `فشل توليد العرض. سبب التوقف: ${candidate.finishReason}`;
+            }
+          } else if (result.promptFeedback?.blockReason) {
+            errorMsg = `تم حظر الطلب بالكامل بواسطة فلاتر Gemini: ${result.promptFeedback.blockReason}`;
+          }
+          sendResponse({ success: false, error: errorMsg });
+        }
+      })
+      .catch(error => {
+        console.error('Gemini API Error:', error);
+        sendResponse({ success: false, error: error.message });
+      });
+    });
+    return true; // Keep message channel open for async response
+  }
 });

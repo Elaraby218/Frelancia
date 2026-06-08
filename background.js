@@ -5,6 +5,14 @@
 // Load constants first (declares SIGNALR_AVAILABLE)
 importScripts('bg/constants.js');
 
+// Load local configuration if present (gitignored)
+try {
+  importScripts('config.local.js');
+  console.log('✅ Local config loaded successfully');
+} catch (e) {
+  console.warn('⚠️ config.local.js not found, extension will rely on user-provided settings');
+}
+
 // Third-party libraries
 try {
   importScripts('jszip.min.js');
