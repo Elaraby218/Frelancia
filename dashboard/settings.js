@@ -17,7 +17,10 @@ function saveAllSettings() {
         development:      getVal('cat-development'),
         ai:               getVal('cat-ai'),
         all:              getVal('cat-all'),
+        aiProvider:       getVal('aiProvider') || 'chatgpt',
         aiChatUrl:        getVal('aiChatUrl'),
+        openRouterApiKey: getVal('openRouterApiKey'),
+        openRouterModel:  getVal('openRouterModel') || 'openrouter/hunter-alpha',
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
@@ -63,7 +66,11 @@ function applySettingsToForm(s) {
     setVal('cat-development',   s.development !== false);
     setVal('cat-ai',            s.ai !== false);
     setVal('cat-all',           s.all !== false);
+    setVal('aiProvider',        s.aiProvider || 'chatgpt');
     setVal('aiChatUrl',         s.aiChatUrl || 'https://chatgpt.com/');
+    setVal('openRouterApiKey',  s.openRouterApiKey || '');
+    setVal('openRouterModel',   s.openRouterModel || 'openrouter/hunter-alpha');
+    setVal('openRouterModelPreset', '');
     setVal('quietHoursEnabled', s.quietHoursEnabled === true);
     setVal('quietHoursStart',   s.quietHoursStart);
     setVal('quietHoursEnd',     s.quietHoursEnd);
@@ -71,6 +78,52 @@ function applySettingsToForm(s) {
     setVal('systemToggle',      s.systemEnabled !== false);
     setVal('notificationMode',  s.notificationMode || 'auto');
     setVal('signalrServerUrl',  s.signalrServerUrl || '');
+
+    syncAiProviderFields();
+    syncOpenRouterModelPreset();
+}
+
+function syncAiProviderFields() {
+    const provider = document.getElementById('aiProvider')?.value || 'chatgpt';
+    const chatgptGroup = document.getElementById('chatgptSettingsGroup');
+    const openRouterGroup = document.getElementById('openRouterSettingsGroup');
+
+    if (chatgptGroup) {
+        chatgptGroup.classList.toggle('hidden', provider !== 'chatgpt');
+    }
+
+    if (openRouterGroup) {
+        openRouterGroup.classList.toggle('hidden', provider !== 'openrouter');
+    }
+}
+
+function toggleOpenRouterApiKeyVisibility() {
+    const input = document.getElementById('openRouterApiKey');
+    const button = document.getElementById('toggleOpenRouterApiKey');
+    if (!input || !button) return;
+
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    button.innerHTML = isPassword
+        ? '<i class="fas fa-eye-slash"></i><span>إخفاء</span>'
+        : '<i class="fas fa-eye"></i><span>إظهار</span>';
+}
+
+function syncOpenRouterModelPreset() {
+    const preset = document.getElementById('openRouterModelPreset');
+    const input = document.getElementById('openRouterModel');
+    if (!preset || !input) return;
+
+    const matchingOption = Array.from(preset.options).find((option) => option.value && option.value === input.value);
+    preset.value = matchingOption ? matchingOption.value : '';
+}
+
+function applyOpenRouterModelPreset() {
+    const preset = document.getElementById('openRouterModelPreset');
+    const input = document.getElementById('openRouterModel');
+    if (!preset || !input || !preset.value) return;
+
+    input.value = preset.value;
 }
 
 function exportBackup() {

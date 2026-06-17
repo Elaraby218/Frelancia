@@ -14,9 +14,13 @@
         <h1>Frelancia Pro</h1>
         <p class="tagline">مساعدك الذكي على مستقل</p>
       </div>
+      <div class="popup-tabs">
+        <button class="popup-tab active" data-tab="overview">الرئيسية</button>
+        <button class="popup-tab" data-tab="ai-chat">AI Chat</button>
+      </div>
     </div>
 
-    <div class="content-body">
+    <div class="content-body popup-panel active" id="overview-tab">
       <div class="stats-overview">
         <div class="stat-box">
           <span class="stat-num" id="todayCount">0</span>
@@ -57,11 +61,38 @@
       <div id="connectionReport" class="connection-report hidden"></div>
     </div>
 
+    <div class="content-body popup-panel" id="ai-chat-tab">
+      <div class="chat-project-card" id="chatProjectCard">
+        <div class="chat-project-label">المشروع الحالي</div>
+        <div class="chat-project-title" id="chatProjectTitle">بانتظار مشروع...</div>
+        <div class="chat-project-meta" id="chatProjectMeta">اضغط زر الذكاء من صفحة المشروع لبدء المحادثة هنا.</div>
+      </div>
+
+      <div class="chat-status-row">
+        <span id="chatStatus">جاهز</span>
+        <span id="chatModel">-</span>
+      </div>
+
+      <div id="chatMessages" class="chat-messages"></div>
+
+      <div class="chat-composer">
+        <textarea id="chatComposer" placeholder="اكتب تعليمات إضافية أو عدل على العرض..."></textarea>
+        <div class="chat-composer-actions">
+          <button id="newChatBtn" class="btn secondary compact">محادثة جديدة</button>
+          <button id="copyLastReplyBtn" class="btn secondary compact">نسخ آخر رد</button>
+          <button id="applyLastReplyBtn" class="btn secondary compact">تعبئة العرض</button>
+          <button id="sendChatBtn" class="btn primary compact">إرسال</button>
+        </div>
+      </div>
+    </div>
+
     <div class="footer">
       <a href="https://mostaql.com/projects" target="_blank">زيارة موقع مستقل الرسمي</a>
     </div>
   </div>
 
+  <script src="shared/markdown.js"></script>
+  <script src="shared/chat-utils.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

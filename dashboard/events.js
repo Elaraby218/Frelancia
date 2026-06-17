@@ -31,6 +31,26 @@ function setupEventListeners() {
         saveBtn.addEventListener('click', saveAllSettings);
     }
 
+    const aiProvider = document.getElementById('aiProvider');
+    if (aiProvider) {
+        aiProvider.addEventListener('change', syncAiProviderFields);
+    }
+
+    const toggleApiKeyBtn = document.getElementById('toggleOpenRouterApiKey');
+    if (toggleApiKeyBtn) {
+        toggleApiKeyBtn.addEventListener('click', toggleOpenRouterApiKeyVisibility);
+    }
+
+    const openRouterModelPreset = document.getElementById('openRouterModelPreset');
+    if (openRouterModelPreset) {
+        openRouterModelPreset.addEventListener('change', applyOpenRouterModelPreset);
+    }
+
+    const openRouterModel = document.getElementById('openRouterModel');
+    if (openRouterModel) {
+        openRouterModel.addEventListener('input', syncOpenRouterModelPreset);
+    }
+
     // Prompt modal — open
     const addPromptBtn = document.getElementById('addPromptBtn');
     if (addPromptBtn) addPromptBtn.addEventListener('click', () => openPromptModal());

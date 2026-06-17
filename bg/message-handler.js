@@ -3,6 +3,20 @@
 // Depends on: constants.js, filters.js, notifications.js, job-checker.js, audio.js
 // ==========================================
 
+const BG_CHAT_SESSION_KEY = 'openRouterChatSession';
+
+/**
+ * Read-modify-write the chat session in storage.
+ * The mutator function receives the session object and can modify it in place.
+ */
+async function updateChatSession(mutator) {
+  const data = await chrome.storage.local.get([BG_CHAT_SESSION_KEY]);
+  const session = data[BG_CHAT_SESSION_KEY] || {};
+  mutator(session);
+  session.updatedAt = Date.now();
+  await chrome.storage.local.set({ [BG_CHAT_SESSION_KEY]: session });
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.action === 'checkNow') {
@@ -87,6 +101,107 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'getDefaultPrompts') {
     sendResponse({ success: true, prompts: DEFAULT_PROMPTS });
     return false;
+  }
+
+  if (message.action === 'generateOpenRouterProposal') {
+    const STREAM_FLUSH_MS = 300;
+    let lastFlush = 0;
+    let flushTimer = null;
+    let flushInFlight = Promise.resolve();
+    let finalized = false;
+
+    const flushChunk = (text) => {
+      if (finalized) return;
+      lastFlush = Date.now();
+      flushInFlight = flushInFlight.then(async () => {
+        if (finalized) return;
+        try {
+          await updateChatSession((session) => {
+            if (!session.messages) session.messages = [];
+            const pendingIdx = session.messages.findIndex((m) => m.pending);
+            if (pendingIdx !== -1) {
+              session.messages[pendingIdx] = { role: 'assistant', content: text, pending: true };
+            }
+          });
+        } catch (e) {
+          console.error('Failed to flush OpenRouter chunk to storage:', e);
+        }
+      });
+    };
+
+    const onChunk = (accumulated) => {
+      if (finalized) return;
+      const now = Date.now();
+      if (now - lastFlush >= STREAM_FLUSH_MS) {
+        flushChunk(accumulated);
+      } else if (!flushTimer) {
+        flushTimer = setTimeout(() => {
+          flushTimer = null;
+          flushChunk(accumulated);
+        }, STREAM_FLUSH_MS - (now - lastFlush));
+      }
+    };
+
+    const finalize = async (result) => {
+      finalized = true;
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      await flushInFlight;
+      await updateChatSession((session) => {
+        session.messages = (session.messages || []).filter((m) => !m.pending);
+        session.messages.push({ role: 'assistant', content: result.text });
+        session.model = result.model || session.model;
+      });
+      sendResponse({ success: true, ...result });
+    };
+
+    const fail = async (error) => {
+      finalized = true;
+      if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+      await flushInFlight;
+      console.error('OpenRouter generation error:', error);
+      const errorMsg = error.message || 'OpenRouter request failed';
+      await updateChatSession((session) => {
+        session.messages = (session.messages || []).filter((m) => !m.pending);
+        session.messages.push({
+          role: 'assistant',
+          content: '\u062a\u0639\u0630\u0631 \u062a\u0648\u0644\u064a\u062f \u0627\u0644\u0631\u062f: ' + errorMsg +
+            '\n\n\u062c\u0631\u0628 \u062a\u063a\u064a\u064a\u0631 \u0627\u0644\u0645\u0648\u062f\u064a\u0644 \u0645\u0646 \u0625\u0639\u062f\u0627\u062f\u0627\u062a \u0627\u0644\u0630\u0643\u0627\u0621 \u0641\u064a \u0644\u0648\u062d\u0629 \u0627\u0644\u062a\u062d\u0643\u0645 (Dashboard).'
+        });
+      });
+      sendResponse({ success: false, error: errorMsg });
+    };
+
+    // Try streaming first, fall back to non-streaming if the provider rejects it
+    generateOpenRouterProposalStream(message, onChunk)
+      .then(finalize)
+      .catch(async (streamError) => {
+        console.warn('Streaming failed, falling back to non-streaming:', streamError.message);
+        try {
+          const result = await generateOpenRouterProposal(message);
+          await finalize(result);
+        } catch (fallbackError) {
+          await fail(fallbackError);
+        }
+      });
+    return true;
+  }
+
+  if (message.action === 'openAiPopup') {
+    chrome.storage.local.set({ popupActiveTab: 'ai-chat' }, async () => {
+      try {
+        if (chrome.action && chrome.action.openPopup) {
+          await chrome.action.openPopup();
+          sendResponse({ success: true });
+          return;
+        }
+
+        sendResponse({ success: false, error: 'Popup API unavailable' });
+      } catch (error) {
+        console.error('Open popup error:', error);
+        sendResponse({ success: false, error: error.message || 'Failed to open popup' });
+      }
+    });
+    return true;
   }
 
   if (message.action === 'download_media') {

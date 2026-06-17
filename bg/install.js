@@ -8,15 +8,24 @@ chrome.runtime.onInstalled.addListener(() => {
 
   chrome.storage.local.get(['settings', 'seenJobs', 'stats', 'trackedProjects', 'prompts', 'recentJobs', 'proposalTemplate'], (data) => {
     const changes = {};
+    const defaultSettings = {
+      development: true,
+      ai: true,
+      all: true,
+      sound: true,
+      interval: 1,
+      aiProvider: 'chatgpt',
+      aiChatUrl: 'https://chatgpt.com/',
+      openRouterModel: 'openrouter/hunter-alpha'
+    };
 
     if (!data.settings) {
-      changes.settings = {
-        development: true,
-        ai: true,
-        all: true,
-        sound: true,
-        interval: 1
-      };
+      changes.settings = defaultSettings;
+    } else {
+      const mergedSettings = { ...defaultSettings, ...data.settings };
+      if (JSON.stringify(mergedSettings) !== JSON.stringify(data.settings)) {
+        changes.settings = mergedSettings;
+      }
     }
 
     if (!data.seenJobs) changes.seenJobs = [];
