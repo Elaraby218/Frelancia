@@ -83,6 +83,38 @@ function setupEventListeners() {
         });
     }
 
+    // Display mode switcher (popup / sidebar) — applies instantly on click
+    document.querySelectorAll('.mode-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const newMode = btn.dataset.mode;
+            const currentActive = document.querySelector('.mode-option.active');
+            if (currentActive && currentActive.dataset.mode === newMode) return; // already active
+
+            // Update UI
+            document.querySelectorAll('.mode-option').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Save immediately to storage
+            chrome.storage.local.get(['settings'], (data) => {
+                const s = data.settings || {};
+                s.displayMode = newMode;
+                chrome.storage.local.set({ settings: s }, () => {
+                    showSaveStatus();
+
+                    // Get the current active tab to open sidebar on it
+                    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                        const tabId = tabs[0]?.id || null;
+                        chrome.runtime.sendMessage({
+                            action: 'setDisplayMode',
+                            mode: newMode,
+                            tabId: tabId
+                        });
+                    });
+                });
+            });
+        });
+    });
+
     // System toggle — auto-save immediately on change
     const systemToggle = document.getElementById('systemToggle');
     if (systemToggle) {

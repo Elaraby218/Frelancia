@@ -39,13 +39,38 @@ importScripts(
   'bg/message-handler.js'  // onMessage handler
 );
 
+// ==========================================
+// Display Mode: Popup vs Sidebar
+// ==========================================
+
+async function applyDisplayMode(mode) {
+  if (mode === 'sidebar') {
+    // Disable popup so clicking the icon opens the side panel
+    await chrome.action.setPopup({ popup: '' });
+    await chrome.sidePanel.setOptions({ path: 'popup.html', enabled: true });
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+    console.log('Display mode: sidebar');
+  } else {
+    // Disable side panel entirely, re-enable popup
+    await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
+    await chrome.sidePanel.setOptions({ enabled: false });
+    await chrome.action.setPopup({ popup: 'popup.html' });
+    console.log('Display mode: popup');
+  }
+}
+
 // Service worker startup
 (async function initOnStartup() {
   console.log('Service worker started');
   const data = await chrome.storage.local.get(['settings']);
-  const mode = (data.settings || {}).notificationMode || 'auto';
+  const settings = data.settings || {};
+  const notifMode = settings.notificationMode || 'auto';
 
-  if (mode === 'polling') {
+  // Apply display mode (sidebar by default)
+  const displayMode = settings.displayMode || 'sidebar';
+  await applyDisplayMode(displayMode);
+
+  if (notifMode === 'polling') {
     console.log('📡 Notification mode: polling — skipping SignalR init');
     return;
   }
