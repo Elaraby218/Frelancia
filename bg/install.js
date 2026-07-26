@@ -48,4 +48,14 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 
   chrome.alarms.create('checkJobs', { periodInMinutes: 1 });
+
+  // Clear legacy ChatGPT prompt keys from older builds
+  if (typeof clearLegacyChatGptPromptStorage === 'function') {
+    clearLegacyChatGptPromptStorage();
+  } else {
+    chrome.storage.local.remove(['pendingChatGptPrompt', 'pendingChatGptPromptMeta']);
+  }
+  if (typeof clearSessionDelivery === 'function') {
+    clearSessionDelivery();
+  }
 });

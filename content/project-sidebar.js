@@ -321,13 +321,21 @@ function handleChatGptClick(promptId) {
                 .replace(/{client_joined}/g, projectData.clientJoined)
                 .replace(/{client_type}/g, projectData.clientType);
 
-            chrome.storage.local.set({ 'pendingChatGptPrompt': prompt }, () => {
-                chrome.storage.local.get(['settings'], (result) => {
-                    const settings = result.settings || {};
-                    const url = settings.aiChatUrl || 'https://chatgpt.com/';
-                    window.open(url, 'mostaql_ai_chat');
-                });
-            });
+            // Hand off to background: one-shot session delivery (not chrome.storage.local)
+            chrome.runtime.sendMessage(
+                { action: 'openAiChatWithPrompt', prompt },
+                (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error('openAiChatWithPrompt failed:', chrome.runtime.lastError.message);
+                        alert('تعذر فتح الذكاء الاصطناعي. أعد تحميل الإضافة والصفحة ثم حاول مرة أخرى.');
+                        return;
+                    }
+                    if (!response || !response.success) {
+                        console.error('openAiChatWithPrompt error:', response && response.error);
+                        alert('تعذر فتح الذكاء الاصطناعي: ' + ((response && response.error) || 'خطأ غير معروف'));
+                    }
+                }
+            );
         }
     });
 }

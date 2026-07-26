@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Mostaql Job Notifier + AI Proposal",
-  "version": "1.0",
+  "version": "1.2.0",
   "description": "تنبيهات فورية للمشاريع الجديدة على مستقل مع إنشاء عروض بالذكاء الاصطناعي",
   "permissions": [
     "notifications",
     "alarms",
     "storage",
     "offscreen",
-    "downloads"
+    "downloads",
+    "tabs"
   ],
   "host_permissions": [
     "https://mostaql.com/*",
@@ -44,7 +45,8 @@
       ],
       "js": [
         "chatgpt.js"
-      ]
+      ],
+      "run_at": "document_start"
     }
   ],
   "background": {

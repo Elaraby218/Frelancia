@@ -33,6 +33,7 @@ importScripts(
   'bg/tracker.js',         // checkTrackedProjects
   'bg/job-checker.js',     // checkForNewJobs
   'bg/signalr.js',         // initializeSignalR
+  'bg/ai-chat.js',         // one-shot ChatGPT prompt delivery
   'bg/install.js',         // onInstalled handler
   'bg/alarm-handler.js',   // onAlarm handler
   'bg/message-handler.js'  // onMessage handler

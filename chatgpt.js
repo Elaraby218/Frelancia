@@ -1,51 +1,39 @@
 // ==========================================
-// Mostaql Project Tracker - ChatGPT Automation
+// Mostaql Job Notifier - ChatGPT Automation
+// Inject ONLY when URL contains ?mostaql_ai=<id>
+// Normal visits never inject (and clear leftover drafts we created)
 // ==========================================
 
-console.log('Mostaql Job Notifier: ChatGPT script injected');
+console.log('Mostaql Job Notifier: ChatGPT script injected (delivery v4)');
 
-function simulateTyping(element, text) {
-    if (!element) return;
+const injectedDeliveryIds = new Set();
+let injectInProgress = false;
 
-    // 1. Focus the element
-    element.focus();
-
-    // 2. Set value (for inputs/textareas) or innerText/innerHTML (for contenteditable)
-    // ChatGPT usually uses a contenteditable div or a textarea.
-    // Modern react apps might require dispatching input events.
-
-    // Try setting value first if it's an input/textarea
-    // ChatGPT often uses a p element inside a contenteditable div
-
-    // Check if it's contenteditable
-    if (element.isContentEditable) {
-        // Clear existing content (usually just a <p><br></p>)
-        element.innerHTML = '';
-
-        // Split text by newlines and create paragraphs
-        const lines = text.split('\n');
-
-        // This is a simplified approach; ChatGPT's editor is complex.
-        // A safer way for React inputs is to set the value property on the prototype
-        // But for contenteditable, we can try document.execCommand (deprecated but works) or simple text node insertion.
-
-        // Let's try inserting text directly
-        document.execCommand('insertText', false, text);
-    } else {
-        // Fallback for standard textareas
-        const nativeTextAreaValueSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value").set;
-        nativeTextAreaValueSetter.call(element, text);
-
-        element.dispatchEvent(new Event('input', { bubbles: true }));
+function getUrlDeliveryId() {
+    try {
+        return new URL(location.href).searchParams.get('mostaql_ai');
+    } catch (e) {
+        return null;
     }
 }
 
+function stripDeliveryParamFromUrl() {
+    try {
+        const url = new URL(location.href);
+        if (!url.searchParams.has('mostaql_ai')) return;
+        url.searchParams.delete('mostaql_ai');
+        const next = url.pathname + (url.search ? url.search : '') + url.hash;
+        history.replaceState(null, '', next);
+    } catch (e) { /* ignore */ }
+}
+
 function findChatInput() {
-    // Selectors for ChatGPT's input box (subject to change)
     const selectors = [
         '#prompt-textarea',
-        '[contenteditable="true"]',
+        'textarea[name="prompt-textarea"]',
         'textarea[data-id="root"]',
+        'form textarea',
+        'main textarea',
         'textarea'
     ];
 
@@ -53,106 +41,279 @@ function findChatInput() {
         const el = document.querySelector(selector);
         if (el) return el;
     }
-    return null;
-}
 
-function findSendButton() {
-    // Selectors for ChatGPT's send button
-    const selectors = [
-        '[data-testid="send-button"]',
-        'button[aria-label="Send prompt"]',
-        'button.mb-1.mr-1' // Sometimes used
-    ];
-
-    for (const selector of selectors) {
-        const el = document.querySelector(selector);
-        if (el && !el.disabled) return el;
+    const editables = document.querySelectorAll('div[contenteditable="true"]');
+    for (const el of editables) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 100 && rect.height > 20) return el;
     }
     return null;
 }
 
-function injectPrompt() {
-    chrome.storage.local.get(['pendingChatGptPrompt'], (data) => {
-        const prompt = data.pendingChatGptPrompt;
+function getInputText(el) {
+    if (!el) return '';
+    if (typeof el.value === 'string') return el.value;
+    return (el.innerText || el.textContent || '').trim();
+}
 
-        if (!prompt) return; // No pending prompt
+function writePromptToInput(inputField, prompt) {
+    inputField.focus();
 
-        console.log('Mostaql Job Notifier: Found pending prompt, attempting to inject...');
+    const isEditable = inputField.isContentEditable ||
+        inputField.getAttribute('contenteditable') === 'true';
 
-        // Try to find the input box. It might take a moment to load.
-        // We'll retry a few times.
+    if (isEditable) {
+        inputField.innerHTML = '';
+        try {
+            document.execCommand('selectAll', false, null);
+            document.execCommand('insertText', false, prompt);
+        } catch (e) {
+            inputField.textContent = prompt;
+        }
+    } else {
+        const proto = window.HTMLTextAreaElement && window.HTMLTextAreaElement.prototype;
+        const descriptor = proto && Object.getOwnPropertyDescriptor(proto, 'value');
+        if (descriptor && descriptor.set) {
+            descriptor.set.call(inputField, prompt);
+        } else {
+            inputField.value = prompt;
+        }
+    }
+
+    inputField.dispatchEvent(new InputEvent('input', {
+        bubbles: true,
+        inputType: 'insertText',
+        data: prompt
+    }));
+    inputField.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function clearChatInput(inputField) {
+    if (!inputField) return;
+    inputField.focus();
+
+    const isEditable = inputField.isContentEditable ||
+        inputField.getAttribute('contenteditable') === 'true';
+
+    if (isEditable) {
+        inputField.innerHTML = '';
+        try {
+            document.execCommand('selectAll', false, null);
+            document.execCommand('delete', false, null);
+        } catch (e) { /* ignore */ }
+        inputField.innerHTML = '<p><br></p>';
+    } else {
+        const proto = window.HTMLTextAreaElement && window.HTMLTextAreaElement.prototype;
+        const descriptor = proto && Object.getOwnPropertyDescriptor(proto, 'value');
+        if (descriptor && descriptor.set) {
+            descriptor.set.call(inputField, '');
+        } else {
+            inputField.value = '';
+        }
+    }
+
+    inputField.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'deleteContentBackward' }));
+    inputField.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function waitForChatInput(maxAttempts = 40, intervalMs = 500) {
+    return new Promise((resolve) => {
         let attempts = 0;
-        const maxAttempts = 20; // 10 seconds (500ms interval)
-
-        const interval = setInterval(() => {
+        const timer = setInterval(() => {
             attempts++;
-            const inputField = findChatInput();
-
-            if (inputField) {
-                clearInterval(interval);
-
-                // Focusing
-                inputField.focus();
-
-                // Small delay to ensure focus
-                setTimeout(() => {
-                    // Simulate typing/pasting
-                    // For modern ChatGPT, directly setting innerHTML/innerText on the contenteditable div often works best with input events.
-
-                    // Forcefully setting text
-                    inputField.innerHTML = `<p>${prompt.replace(/\n/g, '<br>')}</p>`;
-
-                    // Dispatch input event to trigger React state updates
-                    inputField.dispatchEvent(new Event('input', { bubbles: true }));
-
-                    // Alternative: Clipboard API (requires permission, maybe flaky)
-                    // document.execCommand('insertText', false, prompt);
-
-                    console.log('Mostaql Job Notifier: Prompt injected');
-
-                    // Clear the prompt from storage so it doesn't run again on reload
-                    // chrome.storage.local.remove(['pendingChatGptPrompt']);
-
-                    // Try to click send after a delay
-                    // MODIFICATION: Auto-send disabled as per user request.
-                    /*
-                    setTimeout(() => {
-                        const sendButton = findSendButton();
-                        if (sendButton) {
-                            sendButton.click();
-                            console.log('Mostaql Job Notifier: Send button clicked');
-                        } else {
-                            console.warn('Mostaql Job Notifier: Send button not found');
-                        }
-                    }, 1000); 
-                    */
-
-                }, 500);
+            const input = findChatInput();
+            if (input) {
+                clearInterval(timer);
+                resolve(input);
             } else if (attempts >= maxAttempts) {
-                clearInterval(interval);
-                console.error('Mostaql Job Notifier: Could not find ChatGPT input field after multiple attempts.');
+                clearInterval(timer);
+                resolve(null);
             }
-        }, 500);
+        }, intervalMs);
     });
 }
 
-// Listen for changes in storage (for when tab is reused/focused without reload)
-chrome.storage.onChanged.addListener((changes, namespace) => {
-    if (namespace === 'local' && changes.pendingChatGptPrompt) {
-        const newValue = changes.pendingChatGptPrompt.newValue;
-        if (newValue) {
-            console.log('Mostaql Job Notifier: New prompt detected via storage change');
-            // Give a small delay for focus to switch
-            setTimeout(injectPrompt, 500);
+function showInjectToast() {
+    if (document.getElementById('mostaql-ai-inject-toast')) return;
+    const toast = document.createElement('div');
+    toast.id = 'mostaql-ai-inject-toast';
+    toast.textContent = 'Mostaql: تم لصق الأمر مرة واحدة';
+    Object.assign(toast.style, {
+        position: 'fixed',
+        top: '16px',
+        right: '16px',
+        zIndex: '2147483647',
+        background: '#0b6e4f',
+        color: '#fff',
+        padding: '10px 14px',
+        borderRadius: '8px',
+        fontSize: '13px',
+        fontFamily: 'Segoe UI, Tahoma, sans-serif',
+        boxShadow: '0 4px 16px rgba(0,0,0,.25)'
+    });
+    (document.body || document.documentElement).appendChild(toast);
+    setTimeout(() => toast.remove(), 3500);
+}
+
+async function injectDelivery(delivery) {
+    if (!delivery || !delivery.text) return false;
+    if (injectedDeliveryIds.has(delivery.id)) return true;
+    if (injectInProgress) return false;
+
+    injectInProgress = true;
+    injectedDeliveryIds.add(delivery.id);
+
+    try {
+        console.log('Mostaql Job Notifier: injecting delivery', delivery.id);
+        const inputField = await waitForChatInput();
+        if (!inputField) {
+            console.error('Mostaql Job Notifier: ChatGPT input not found');
+            injectedDeliveryIds.delete(delivery.id);
+            return false;
         }
+
+        await new Promise((r) => setTimeout(r, 300));
+        writePromptToInput(inputField, delivery.text);
+
+        try {
+            await chrome.runtime.sendMessage({
+                action: 'markAiComposerForClear',
+                preview: delivery.text.slice(0, 120)
+            });
+        } catch (e) { /* ignore */ }
+
+        showInjectToast();
+        console.log('Mostaql Job Notifier: Prompt injected successfully');
+        return true;
+    } catch (err) {
+        console.error('Mostaql Job Notifier: inject failed', err);
+        injectedDeliveryIds.delete(delivery.id);
+        return false;
+    } finally {
+        injectInProgress = false;
     }
+}
+
+/**
+ * Only path that injects: URL has ?mostaql_ai=...
+ */
+async function handleTokenizedOpen() {
+    const token = getUrlDeliveryId();
+    if (!token) return false;
+    if (!chrome.runtime?.id) return false;
+
+    stripDeliveryParamFromUrl();
+
+    try {
+        const response = await chrome.runtime.sendMessage({
+            action: 'claimAiPrompt',
+            expectedId: token
+        });
+        const delivery = response && response.delivery;
+        if (!delivery) {
+            console.log('Mostaql Job Notifier: token present but no matching delivery');
+            return false;
+        }
+        return injectDelivery(delivery);
+    } catch (err) {
+        console.warn('Mostaql Job Notifier: claim failed', err);
+        return false;
+    }
+}
+
+/**
+ * Normal ChatGPT visit: never inject.
+ * Discard leftovers + clear composer draft left from a previous ذكاء inject.
+ */
+async function handleNormalVisit() {
+    if (!chrome.runtime?.id) return;
+
+    try {
+        await chrome.runtime.sendMessage({ action: 'discardAiPrompt' });
+    } catch (e) { /* ignore */ }
+
+    let flag = null;
+    try {
+        const response = await chrome.runtime.sendMessage({ action: 'consumeComposerClearFlag' });
+        flag = response && response.flag;
+    } catch (e) { /* ignore */ }
+
+    if (!flag) {
+        console.log('Mostaql Job Notifier: normal visit — no inject');
+        return;
+    }
+
+    console.log('Mostaql Job Notifier: clearing previous ذكاء draft from composer');
+    const preview = (flag.preview || '').trim();
+
+    // ChatGPT may restore drafts after hydration — clear a few times
+    for (let i = 0; i < 12; i++) {
+        const input = findChatInput();
+        if (input) {
+            const text = getInputText(input);
+            if (!text || (preview && text.includes(preview.slice(0, 40))) || i < 3) {
+                clearChatInput(input);
+            }
+        }
+        await new Promise((r) => setTimeout(r, 400));
+    }
+}
+
+// Claim token as early as document_start (before ChatGPT can strip the query param)
+const earlyToken = getUrlDeliveryId();
+let earlyClaimPromise = null;
+if (earlyToken && chrome.runtime?.id) {
+    stripDeliveryParamFromUrl();
+    earlyClaimPromise = chrome.runtime.sendMessage({
+        action: 'claimAiPrompt',
+        expectedId: earlyToken
+    }).catch((err) => {
+        console.warn('Mostaql Job Notifier: early claim failed', err);
+        return null;
+    });
+}
+
+async function start() {
+    // Always wipe legacy local keys
+    try {
+        chrome.storage.local.remove(['pendingChatGptPrompt', 'pendingChatGptPromptMeta']);
+    } catch (e) { /* ignore */ }
+
+    if (earlyClaimPromise) {
+        try {
+            const response = await earlyClaimPromise;
+            const delivery = response && response.delivery;
+            if (delivery) {
+                await injectDelivery(delivery);
+                return;
+            }
+        } catch (e) {
+            console.warn(e);
+        }
+        // Token was present but claim failed — do not fall through to inject anything else
+        console.log('Mostaql Job Notifier: tokenized open produced no delivery');
+        return;
+    }
+
+    if (getUrlDeliveryId()) {
+        await handleTokenizedOpen();
+        return;
+    }
+
+    await handleNormalVisit();
+}
+
+// Legacy message kept as no-op safety (injection is URL-token only now)
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message && message.action === 'aiPromptAvailable') {
+        sendResponse({ ok: false, reason: 'token-only' });
+        return false;
+    }
+    return false;
 });
 
-// Run injection logic
-// We wait a bit for the page to be fully interactive
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', injectPrompt);
+    document.addEventListener('DOMContentLoaded', start);
 } else {
-    // If loaded, wait a split second just in case
-    setTimeout(injectPrompt, 1000);
+    start();
 }

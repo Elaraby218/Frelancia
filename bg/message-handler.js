@@ -89,6 +89,47 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
+  if (message.action === 'openAiChatWithPrompt') {
+    openAiChatWithPrompt(message.prompt)
+      .then((result) => sendResponse(result))
+      .catch((error) => {
+        console.error('openAiChatWithPrompt error:', error);
+        sendResponse({ success: false, error: error.message || String(error) });
+      });
+    return true;
+  }
+
+  if (message.action === 'claimAiPrompt') {
+    claimAiPromptDelivery(message.expectedId)
+      .then((delivery) => sendResponse({ success: true, delivery }))
+      .catch((error) => {
+        console.error('claimAiPrompt error:', error);
+        sendResponse({ success: false, delivery: null, error: error.message || String(error) });
+      });
+    return true;
+  }
+
+  if (message.action === 'discardAiPrompt') {
+    discardAiPromptDelivery()
+      .then((result) => sendResponse(result))
+      .catch((error) => sendResponse({ success: false, error: error.message || String(error) }));
+    return true;
+  }
+
+  if (message.action === 'markAiComposerForClear') {
+    markComposerForClear(message.preview)
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message || String(error) }));
+    return true;
+  }
+
+  if (message.action === 'consumeComposerClearFlag') {
+    consumeComposerClearFlag()
+      .then((flag) => sendResponse({ success: true, flag }))
+      .catch((error) => sendResponse({ success: false, flag: null, error: error.message || String(error) }));
+    return true;
+  }
+
   if (message.action === 'download_media') {
     const { url, filename, content } = message;
 
