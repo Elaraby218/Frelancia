@@ -19,12 +19,12 @@ async function checkTrackedProjects() {
       const response = await fetch(project.url, {
         cache: 'no-store',
         method: 'GET',
-        credentials: 'omit',
+        credentials: 'include',
         referrerPolicy: 'no-referrer',
+        redirect: 'follow',
         headers: {
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.9',
-          'Accept-Language': 'ar,en;q=0.9',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+          'Accept-Language': 'ar,en;q=0.9'
         }
       });
       if (!response.ok) continue;
@@ -51,9 +51,9 @@ async function checkTrackedProjects() {
           const isEnabled = data.notificationsEnabled !== false;
 
           if (isEnabled) {
-            showTrackedNotification(project, changeMsg);
+            await showTrackedNotification(project, changeMsg);
             if (settings.sound) {
-              playTrackedSound();
+              await playTrackedSound();
             }
           } else {
             console.log('Notifications are toggled off. Skipping alert for tracked project update.');

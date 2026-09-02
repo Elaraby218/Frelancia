@@ -93,7 +93,7 @@ function setupEventListeners() {
 
         if (response && response.success) {
           connReport.className = 'connection-report success';
-          connReport.textContent = `✓ الاتصال ناجح. تم جلب ${response.length} بايت من موقع مستقل.`;
+          connReport.textContent = `✓ الاتصال ناجح. تم اكتشاف ${response.jobs} مشروعًا في صفحة مستقل.`;
         } else {
           connReport.className = 'connection-report error';
           connReport.textContent = `✗ فشل الاتصال: ${response?.error || 'خطأ غير معروف'}. حاول فتح Mostaql.com أولاً.`;

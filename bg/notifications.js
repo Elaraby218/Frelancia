@@ -3,6 +3,21 @@
 // Depends on: filters.js (parseDurationDays)
 // ==========================================
 
+async function createStoredNotification(options, payload) {
+  const notificationId = await new Promise((resolve, reject) => {
+    chrome.notifications.create(options, (createdId) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(createdId);
+    });
+  });
+
+  await chrome.storage.local.set({ [`notification_${notificationId}`]: payload });
+  return notificationId;
+}
+
 function showNotification(jobs) {
   const job = jobs[0];
   const title = jobs.length === 1
@@ -18,7 +33,7 @@ function showNotification(jobs) {
     message = `${job.title}\nو ${jobs.length - 1} مشاريع أخرى`;
   }
 
-  chrome.notifications.create({
+  return createStoredNotification({
     type: 'basic',
     iconUrl: 'icons/icon128.png',
     title: title,
@@ -29,22 +44,18 @@ function showNotification(jobs) {
       { title: 'قدّم الآن' },
       { title: 'فتح المشروع' }
     ]
-  }, (notificationId) => {
-    chrome.storage.local.set({ [`notification_${notificationId}`]: job });
-  });
+  }, job);
 }
 
 function showTrackedNotification(project, changeMsg) {
-  chrome.notifications.create({
+  return createStoredNotification({
     type: 'basic',
     iconUrl: 'icons/icon128.png',
     title: `تحديث في مشروع: ${project.title}`,
     message: changeMsg,
     priority: 2,
     requireInteraction: true
-  }, (notificationId) => {
-    chrome.storage.local.set({ [`notification_${notificationId}`]: project.url });
-  });
+  }, project);
 }
 
 function parseMinBudgetValue(budgetText) {

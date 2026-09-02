@@ -118,3 +118,80 @@ function isQuietHour(settings) {
     return currentMinutes >= startMinutes || currentMinutes <= endMinutes;
   }
 }
+
+function normalizeArabicDigits(value) {
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const easternArabicIndic = '۰۱۲۳۴۵۶۷۸۹';
+
+  return String(value || '')
+    .replace(/[٠-٩]/g, digit => arabicIndic.indexOf(digit))
+    .replace(/[۰-۹]/g, digit => easternArabicIndic.indexOf(digit));
+}
+
+function parseMostaqlPublishedAt(job, nowMs = Date.now()) {
+  const absoluteValue = job.postedAt
+    || job.publishedAt
+    || job.publishedDatetime
+    || job.publishDate;
+
+  if (absoluteValue) {
+    const normalized = normalizeArabicDigits(absoluteValue).trim();
+    const exactMatch = normalized.match(
+      /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/
+    );
+
+    if (exactMatch) {
+      const [, year, month, day, hour, minute, second = '0'] = exactMatch;
+      const parsed = new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second)
+      ).getTime();
+      if (Number.isFinite(parsed)) return parsed;
+    }
+
+    const parsed = Date.parse(normalized);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+
+  const relative = normalizeArabicDigits(job.time || '').replace(/\s+/g, ' ').trim();
+  if (!relative) return null;
+  if (/الآن|لحظات|ثوان|ثانية/.test(relative)) return nowMs;
+
+  const numberMatch = relative.match(/(\d+)/);
+  if (!numberMatch) {
+    if (/دقيقت(?:ان|ين)/.test(relative)) return nowMs - 2 * 60 * 1000;
+    if (/ساعت(?:ان|ين)/.test(relative)) return nowMs - 2 * 60 * 60 * 1000;
+    if (/يومين|يومان/.test(relative)) return nowMs - 2 * 24 * 60 * 60 * 1000;
+    if (/دقيقة/.test(relative)) return nowMs - 60 * 1000;
+    if (/ساعة/.test(relative)) return nowMs - 60 * 60 * 1000;
+    if (/يوم/.test(relative)) return nowMs - 24 * 60 * 60 * 1000;
+    return null;
+  }
+
+  const amount = Number(numberMatch[1]);
+  if (/دقيق|دقائق/.test(relative)) return nowMs - amount * 60 * 1000;
+  if (/ساع/.test(relative)) return nowMs - amount * 60 * 60 * 1000;
+  if (/يوم|أيام/.test(relative)) return nowMs - amount * 24 * 60 * 60 * 1000;
+  return null;
+}
+
+function isRecentlyPublishedJob(job, settings, lastSuccessfulCheck, nowMs = Date.now()) {
+  const publishedAt = parseMostaqlPublishedAt(job, nowMs);
+  if (!Number.isFinite(publishedAt)) return false;
+
+  const interval = Math.max(0.5, Number(settings?.interval) || 1);
+  const graceMinutes = Math.min(5, Math.max(2, interval));
+  const maximumLookbackMinutes = 10;
+  const lastCheckMs = lastSuccessfulCheck ? Date.parse(lastSuccessfulCheck) : NaN;
+  const maximumLookback = nowMs - maximumLookbackMinutes * 60 * 1000;
+  const cutoff = Number.isFinite(lastCheckMs)
+    ? Math.max(lastCheckMs - graceMinutes * 60 * 1000, maximumLookback)
+    : maximumLookback;
+
+  // Allow a small amount of clock skew between Mostaql and the local device.
+  return publishedAt >= cutoff && publishedAt <= nowMs + 2 * 60 * 1000;
+}

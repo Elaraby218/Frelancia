@@ -94,11 +94,13 @@ class SignalRClient {
 
         this.connection.on('Connected', (data) => {
             console.log('SignalR: Connection confirmed', data);
+            chrome.storage.local.set({ signalRLastMessageAt: new Date().toISOString() });
         });
 
         this.connection.on('NewJobsDetected', async (data) => {
             if (this.connection !== conn) return; // stale — ignore
             console.log('SignalR: New jobs detected', data);
+            await chrome.storage.local.set({ signalRLastMessageAt: new Date().toISOString() });
 
             if (!data || !Array.isArray(data.jobs)) {
                 console.warn('SignalR: Invalid payload received, expected data.jobs array');
@@ -152,7 +154,7 @@ class SignalRClient {
         console.log(`SignalR: Processing ${jobs.length} new job(s) [ZERO HTTP REQUESTS]`);
 
         const data = await chrome.storage.local.get(['seenJobs', 'recentJobs', 'stats', 'settings', 'notificationsEnabled']);
-        let seenJobs = data.seenJobs || [];
+        let seenJobs = (data.seenJobs || []).map(String);
         let recentJobs = data.recentJobs || [];
         let stats = data.stats || { todayCount: 0, todayDate: new Date().toDateString() };
         const settings = data.settings || {};
@@ -168,28 +170,36 @@ class SignalRClient {
         }
 
         const validJobs = [];
+        const establishingBaseline = !stats.lastCheck && seenJobs.length === 0;
 
         for (const job of jobs) {
-            if (seenJobs.includes(job.id)) {
-                console.log(`SignalR: Skipping already seen job ${job.id}`);
+            const normalizedJob = { ...job, id: String(job.id) };
+
+            if (seenJobs.includes(normalizedJob.id)) {
+                console.log(`SignalR: Skipping already seen job ${normalizedJob.id}`);
                 continue;
             }
 
-            seenJobs.push(job.id);
+            seenJobs.push(normalizedJob.id);
 
-            if (!applyFilters(job, settings)) {
-                console.log(`SignalR: Filtering out job ${job.id}`);
+            if (establishingBaseline || !isRecentlyPublishedJob(normalizedJob, settings, stats.lastCheck)) {
+                console.log(`SignalR: Ignoring old or undated job ${normalizedJob.id}`);
                 continue;
             }
 
-            const existingIdx = recentJobs.findIndex(rj => rj.id === job.id);
+            if (!applyFilters(normalizedJob, settings)) {
+                console.log(`SignalR: Filtering out job ${normalizedJob.id}`);
+                continue;
+            }
+
+            const existingIdx = recentJobs.findIndex(rj => String(rj.id) === normalizedJob.id);
             if (existingIdx !== -1) {
-                recentJobs[existingIdx] = { ...recentJobs[existingIdx], ...job };
+                recentJobs[existingIdx] = { ...recentJobs[existingIdx], ...normalizedJob };
             } else {
-                recentJobs.unshift(job);
+                recentJobs.unshift(normalizedJob);
             }
 
-            validJobs.push(job);
+            validJobs.push(normalizedJob);
         }
 
         stats.lastCheck = new Date().toISOString();
@@ -219,10 +229,20 @@ class SignalRClient {
             
             if (isEnabled) {
                 console.log(`SignalR: Showing notifications for ${validJobs.length} job(s) [NO HTTP REQUESTS MADE]`);
-                showNotification(validJobs);
+                try {
+                    await showNotification(validJobs);
+                } catch (error) {
+                    // The safety poll must be able to retry jobs when Chrome
+                    // rejects notification creation.
+                    const failedIds = new Set(validJobs.map(job => String(job.id)));
+                    seenJobs = seenJobs.filter(id => !failedIds.has(String(id)));
+                    stats.todayCount = Math.max(0, stats.todayCount - validJobs.length);
+                    await chrome.storage.local.set({ seenJobs, stats, recentJobs });
+                    throw error;
+                }
 
                 if (settings.sound) {
-                    playSound();
+                    await playSound();
                 }
             } else {
                 console.log('SignalR: Notifications are toggled off. Skipping alert.');

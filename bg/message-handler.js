@@ -22,8 +22,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       budget: '500 $',
       url: 'https://mostaql.com/projects'
     }];
-    showNotification(testJobs);
-    sendResponse({ success: true });
+    showNotification(testJobs)
+      .then((notificationId) => sendResponse({ success: true, notificationId }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
@@ -34,11 +35,16 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'updateAlarm') {
-    const interval = parseInt(message.interval) || 1;
-    chrome.alarms.clear('checkJobs');
-    chrome.alarms.create('checkJobs', { periodInMinutes: interval });
-    console.log(`Alarm 'checkJobs' updated to ${interval} minutes.`);
-    sendResponse({ success: true, interval: interval });
+    const interval = normalizeCheckInterval(message.interval);
+    chrome.alarms.create('checkJobs', {
+      delayInMinutes: 0.5,
+      periodInMinutes: interval
+    }).then(() => {
+      console.log(`Alarm 'checkJobs' updated to ${interval} minutes.`);
+      sendResponse({ success: true, interval });
+    }).catch((error) => {
+      sendResponse({ success: false, error: error.message });
+    });
     return true;
   }
 
@@ -73,13 +79,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'debugFetch') {
-    fetch(MOSTAQL_URLS.all)
-      .then(r => r.text())
-      .then(html => {
-        console.log('HTML Preview (first 2000 chars):');
-        console.log(html.substring(0, 2000));
-        sendResponse({ success: true, length: html.length });
-      })
+    fetchJobs(MOSTAQL_URLS.all)
+      .then(jobs => sendResponse({ success: true, jobs: jobs.length }))
       .catch(e => sendResponse({ success: false, error: e.message }));
     return true;
   }

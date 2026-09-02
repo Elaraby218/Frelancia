@@ -42,8 +42,16 @@ importScripts(
 // Service worker startup
 (async function initOnStartup() {
   console.log('Service worker started');
+  await ensureCheckJobsAlarm();
+
   const data = await chrome.storage.local.get(['settings']);
-  const mode = (data.settings || {}).notificationMode || 'auto';
+  const settings = data.settings || {};
+  const mode = settings.notificationMode || 'auto';
+
+  if (settings.systemEnabled === false) {
+    console.log('Notification system is paused.');
+    return;
+  }
 
   if (mode === 'polling') {
     console.log('📡 Notification mode: polling — skipping SignalR init');

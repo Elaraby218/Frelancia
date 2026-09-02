@@ -24,36 +24,45 @@ async function fetchJobs(url) {
 
     const response = await fetch(fetchUrl, {
       method: 'GET',
-      credentials: 'omit',
+      // Reuse the user's Mostaql/Cloudflare session. Without these cookies a
+      // background request can receive a 403 while Mostaql works in a tab.
+      credentials: 'include',
       referrerPolicy: 'no-referrer',
+      redirect: 'follow',
       headers: {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
         'Accept-Language': 'ar,en;q=0.9',
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'Pragma': 'no-cache'
       }
     });
 
     if (!response.ok) {
-      console.error(`HTTP Error: ${response.status}`);
-      return [];
+      throw new Error(`Mostaql returned HTTP ${response.status}`);
     }
 
     const html = await response.text();
     console.log(`Received HTML length: ${html.length}`);
 
-    if (html.includes('Cloudflare') || html.includes('challenge-platform')) {
-      console.error('Cloudflare challenge detected. Please open Mostaql.com in a tab first.');
-      return [];
+    if (
+      html.includes('challenge-platform')
+      || /<title>\s*(?:403 Forbidden|Just a moment)/i.test(html)
+      || /cf-(?:challenge|error)/i.test(html)
+    ) {
+      throw new Error('Mostaql access challenge detected. Open Mostaql in a tab and sign in, then retry.');
     }
 
     const jobs = await parseJobsOffscreen(html);
     console.log(`Parsed ${jobs.length} jobs via Offscreen`);
+
+    if (jobs.length === 0 && /\/project\/\d+/i.test(html)) {
+      throw new Error('Mostaql projects were found, but the page format could not be parsed.');
+    }
+
     return jobs;
   } catch (error) {
     console.error('Error fetching jobs:', error);
-    return [];
+    throw error;
   }
 }
 
@@ -61,16 +70,18 @@ async function fetchProjectDetails(url) {
   try {
     const response = await fetch(url, {
       method: 'GET',
-      credentials: 'omit',
+      credentials: 'include',
       referrerPolicy: 'no-referrer',
+      redirect: 'follow',
       headers: {
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Language': 'ar,en;q=0.9',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'Accept-Language': 'ar,en;q=0.9'
       }
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      throw new Error(`Mostaql project details returned HTTP ${response.status}`);
+    }
 
     const html = await response.text();
     await setupOffscreenDocument();

@@ -71,10 +71,11 @@ function parseMostaqlHTML(html) {
                     const title = link.textContent.trim();
                     const budgetEl = row.querySelector('td:nth-child(4), [class*="budget"]');
                     const budget = budgetEl ? budgetEl.textContent.trim() : 'غير محدد';
-                    const timeEl = row.querySelector('td:nth-child(5n), .timeSince, [class*="date"]');
+                    const timeEl = row.querySelector('time[datetime], time, .timeSince, [class*="date"]');
                     const time = timeEl ? timeEl.textContent.trim() : '';
+                    const postedAt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
                     seenIds.add(id);
-                    jobs.push({ id, title, budget, time, postedAt: '', poster: '', bidsText: '',
+                    jobs.push({ id, title, budget, time, postedAt, poster: '', bidsText: '',
                         url: href.startsWith('http') ? href : 'https://mostaql.com' + href });
                 }
             }
@@ -92,9 +93,10 @@ function parseMostaqlHTML(html) {
                 const id = idMatch[1];
                 if (!seenIds.has(id)) {
                     seenIds.add(id);
-                    const timeEl = card.querySelector('.timeSince, [class*="date"]');
+                    const timeEl = card.querySelector('time[datetime], time, .timeSince, [class*="date"]');
+                    const postedAt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
                     jobs.push({ id, title: link.textContent.trim(), budget: 'غير محدد',
-                        time: timeEl ? timeEl.textContent.trim() : '', postedAt: '', poster: '', bidsText: '',
+                        time: timeEl ? timeEl.textContent.trim() : '', postedAt, poster: '', bidsText: '',
                         url: href.startsWith('http') ? href : 'https://mostaql.com' + href });
                 }
             }
