@@ -55,7 +55,7 @@ function parseMostaqlHTML(html) {
         const metaItems = item.querySelectorAll('.project__meta li');
         const bidsText = metaItems.length >= 3 ? metaItems[2].textContent.replace(/\s+/g, ' ').trim() : '';
 
-        jobs.push({ id, title, url, poster, time, postedAt, bidsText, budget: 'غير محدد' });
+        jobs.push({ id, title, url, poster, time, postedAt, bidsText, budget: '' });
     });
 
     // Strategy 1: Table Rows (Classic View)
@@ -70,7 +70,7 @@ function parseMostaqlHTML(html) {
                 if (!seenIds.has(id)) {
                     const title = link.textContent.trim();
                     const budgetEl = row.querySelector('td:nth-child(4), [class*="budget"]');
-                    const budget = budgetEl ? budgetEl.textContent.trim() : 'غير محدد';
+                    const budget = budgetEl ? budgetEl.textContent.trim() : '';
                     const timeEl = row.querySelector('time[datetime], time, .timeSince, [class*="date"]');
                     const time = timeEl ? timeEl.textContent.trim() : '';
                     const postedAt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
@@ -95,7 +95,7 @@ function parseMostaqlHTML(html) {
                     seenIds.add(id);
                     const timeEl = card.querySelector('time[datetime], time, .timeSince, [class*="date"]');
                     const postedAt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
-                    jobs.push({ id, title: link.textContent.trim(), budget: 'غير محدد',
+                    jobs.push({ id, title: link.textContent.trim(), budget: '',
                         time: timeEl ? timeEl.textContent.trim() : '', postedAt, poster: '', bidsText: '',
                         url: href.startsWith('http') ? href : 'https://mostaql.com' + href });
                 }

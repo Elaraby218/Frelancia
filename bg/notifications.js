@@ -18,6 +18,28 @@ async function createStoredNotification(options, payload) {
   return notificationId;
 }
 
+function formatNotificationBudget(budget) {
+  if (typeof budget !== 'string') return '';
+
+  const normalized = budget.replace(/\s+/g, ' ').trim();
+  const unavailableValues = new Set([
+    '',
+    '-',
+    '--',
+    'غير محدد',
+    'غير محددة',
+    'غير معروف',
+    'غير معروفة',
+    'not specified',
+    'unknown',
+    'n/a'
+  ]);
+
+  return unavailableValues.has(normalized.toLocaleLowerCase())
+    ? ''
+    : `[ ${normalized} ]`;
+}
+
 function showNotification(jobs) {
   const job = jobs[0];
   const title = jobs.length === 1
@@ -26,9 +48,9 @@ function showNotification(jobs) {
 
   let message = '';
   if (jobs.length === 1) {
-    const budget = job.budget ? `[ ${job.budget} ]` : '';
+    const budget = formatNotificationBudget(job.budget);
     const desc = job.description ? `\n\n${job.description.substring(0, 150)}${job.description.length > 150 ? '...' : ''}` : '';
-    message = `${job.title} ${budget}${desc}`;
+    message = `${job.title}${budget ? ` ${budget}` : ''}${desc}`;
   } else {
     message = `${job.title}\nو ${jobs.length - 1} مشاريع أخرى`;
   }
