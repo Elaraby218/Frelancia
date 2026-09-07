@@ -145,19 +145,22 @@ function parseMostaqlPublishedAt(job, nowMs = Date.now()) {
   if (absoluteValue) {
     const normalized = normalizeArabicDigits(absoluteValue).trim();
     const exactMatch = normalized.match(
-      /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?/
+      /^(\d{4})-(\d{1,2})-(\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/
     );
 
     if (exactMatch) {
       const [, year, month, day, hour, minute, second = '0'] = exactMatch;
-      const parsed = new Date(
+      // Mostaql emits timezone-less datetime attributes in UTC. Parsing these
+      // with `new Date(year, ...)` treats them as local time and makes a fresh
+      // job look hours old in zones such as Cairo (UTC+3).
+      const parsed = Date.UTC(
         Number(year),
         Number(month) - 1,
         Number(day),
         Number(hour),
         Number(minute),
         Number(second)
-      ).getTime();
+      );
       if (Number.isFinite(parsed)) return parsed;
     }
 

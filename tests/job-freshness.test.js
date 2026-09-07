@@ -43,7 +43,7 @@ assert.equal(
 );
 assert.equal(
   parseMostaqlPublishedAt({ postedAt: '2026-09-02 14:59:00' }, now),
-  new Date(2026, 8, 2, 14, 59, 0).getTime()
+  Date.UTC(2026, 8, 2, 14, 59, 0)
 );
 assert.equal(parseMostaqlPublishedAt({ time: 'منذ دقيقتين' }, now), now - 2 * 60 * 1000);
 assert.equal(parseMostaqlPublishedAt({ time: 'منذ ٣ دقائق' }, now), now - 3 * 60 * 1000);
@@ -60,6 +60,18 @@ assert.equal(
 assert.equal(
   isRecentlyPublishedJob({ title: 'No timestamp' }, { interval: 1 }, lastCheck, now),
   false
+);
+
+const cairoNow = Date.UTC(2026, 8, 7, 20, 41, 0);
+assert.equal(
+  isRecentlyPublishedJob(
+    { postedAt: '2026-09-07 20:40:30', time: 'منذ دقيقة' },
+    { interval: 1 },
+    new Date(cairoNow - 60 * 1000).toISOString(),
+    cairoNow
+  ),
+  true,
+  'timezone-less Mostaql UTC timestamps must remain fresh in Cairo'
 );
 
 console.log('job-freshness tests passed');

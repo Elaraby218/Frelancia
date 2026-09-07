@@ -25,6 +25,10 @@ async (page) => {
     )),
     parsedJobs
   );
+  const firstPublishedMs = await page.evaluate(
+    (job) => parseMostaqlPublishedAt(job),
+    parsedJobs[0]
+  );
 
   return {
     status: response.status(),
@@ -34,6 +38,12 @@ async (page) => {
     parsedJobs: parsedJobs.length,
     freshJobs: freshJobs.length,
     firstProjectId: parsedJobs[0]?.id,
-    firstPostedAt: parsedJobs[0]?.postedAt
+    firstPostedAt: parsedJobs[0]?.postedAt,
+    firstRelativeTime: parsedJobs[0]?.time,
+    firstAgeMinutes: Number.isFinite(firstPublishedMs)
+      ? Math.round((Date.now() - firstPublishedMs) / 60000)
+      : null,
+    browserNow: await page.evaluate(() => new Date().toString()),
+    browserNowIso: await page.evaluate(() => new Date().toISOString())
   };
 }
