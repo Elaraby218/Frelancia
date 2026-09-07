@@ -5,7 +5,7 @@
 
 function normalizeCheckInterval(value) {
   const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) && parsed >= 0.5 ? parsed : 1;
+  return Number.isFinite(parsed) ? Math.min(1440, Math.max(0.5, parsed)) : 1;
 }
 
 async function ensureCheckJobsAlarm() {
@@ -32,20 +32,26 @@ async function initializeExtensionStorage() {
     'trackedProjects',
     'prompts',
     'recentJobs',
-    'proposalTemplate'
+    'proposalTemplate',
+    'notificationsEnabled'
   ]);
   const changes = {};
-
-  if (!data.settings) {
-    changes.settings = {
-      development: true,
-      ai: true,
-      all: true,
-      sound: true,
-      interval: 1,
-      systemEnabled: true,
-      notificationMode: 'auto'
-    };
+  const defaultSettings = {
+    development: true,
+    ai: true,
+    all: true,
+    sound: true,
+    interval: 1,
+    systemEnabled: true,
+    notificationMode: 'auto'
+  };
+  const storedSettings = data.settings && typeof data.settings === 'object'
+    ? data.settings
+    : {};
+  const mergedSettings = { ...defaultSettings, ...storedSettings };
+  mergedSettings.interval = normalizeCheckInterval(mergedSettings.interval);
+  if (JSON.stringify(mergedSettings) !== JSON.stringify(storedSettings)) {
+    changes.settings = mergedSettings;
   }
 
   if (!data.seenJobs) changes.seenJobs = [];
@@ -63,6 +69,7 @@ async function initializeExtensionStorage() {
 
   if (!data.trackedProjects) changes.trackedProjects = {};
   if (!data.prompts) changes.prompts = DEFAULT_PROMPTS;
+  if (typeof data.notificationsEnabled !== 'boolean') changes.notificationsEnabled = true;
 
   if (!data.proposalTemplate) {
     changes.proposalTemplate = `اطلعت على مشروعك وفهمت متطلباته جيدا، واذا انني قادر على تقديم العمل بطريقة منظمة وواضحة. احرص على الدقة لضمان ان تكون النتيجة مرضية تماما لك.

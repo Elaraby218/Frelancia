@@ -6,6 +6,10 @@ const vm = require('node:vm');
 const filtersPath = path.join(__dirname, '..', 'bg', 'filters.js');
 const filtersSource = fs.readFileSync(filtersPath, 'utf8') + `
   ;globalThis.__freshness = {
+    applyFilters,
+    parseHiringRate,
+    parseDurationDays,
+    parseBudgetValue,
     normalizeArabicDigits,
     parseMostaqlPublishedAt,
     isRecentlyPublishedJob
@@ -13,11 +17,30 @@ const filtersSource = fs.readFileSync(filtersPath, 'utf8') + `
 `;
 vm.runInThisContext(filtersSource, { filename: filtersPath });
 
-const { normalizeArabicDigits, parseMostaqlPublishedAt, isRecentlyPublishedJob } = global.__freshness;
+const {
+  applyFilters,
+  parseHiringRate,
+  parseDurationDays,
+  parseBudgetValue,
+  normalizeArabicDigits,
+  parseMostaqlPublishedAt,
+  isRecentlyPublishedJob
+} = global.__freshness;
 const now = new Date(2026, 8, 2, 15, 0, 0).getTime();
 const lastCheck = new Date(now - 60 * 1000).toISOString();
 
 assert.equal(normalizeArabicDigits('١٢٣۴۵'), '12345');
+assert.equal(parseBudgetValue('١٠٠ - ٥٠٠ دولار'), 500);
+assert.equal(parseHiringRate('٨٥٪'), 85);
+assert.equal(parseDurationDays('مدة التنفيذ: ٧ أيام'), 7);
+assert.equal(
+  applyFilters({ id: '1', title: 'مشروع JavaScript' }, { keywordsInclude: ', JavaScript, ,' }),
+  true
+);
+assert.equal(
+  applyFilters({ id: '2', title: 'مشروع تصميم' }, { keywordsInclude: ', JavaScript, ,' }),
+  false
+);
 assert.equal(
   parseMostaqlPublishedAt({ postedAt: '2026-09-02 14:59:00' }, now),
   new Date(2026, 8, 2, 14, 59, 0).getTime()

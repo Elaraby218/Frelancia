@@ -3,6 +3,8 @@
 // ==========================================
 
 function applyFilters(job, settings) {
+  settings = settings || {};
+
   if (settings.minBudget > 0 && job.budget) {
     const budgetValue = parseBudgetValue(job.budget);
     if (budgetValue > 0 && budgetValue < settings.minBudget) {
@@ -20,16 +22,16 @@ function applyFilters(job, settings) {
   }
 
   if (settings.keywordsInclude && settings.keywordsInclude.trim() !== '') {
-    const includes = settings.keywordsInclude.toLowerCase().split(',').map(k => k.trim());
+    const includes = settings.keywordsInclude.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
     const jobContent = (job.title + ' ' + (job.description || '')).toLowerCase();
-    if (!includes.some(k => jobContent.includes(k))) {
+    if (includes.length > 0 && !includes.some(k => jobContent.includes(k))) {
       console.log(`Filtering out job ${job.id} because it doesn't match include keywords`);
       return false;
     }
   }
 
   if (settings.keywordsExclude && settings.keywordsExclude.trim() !== '') {
-    const excludes = settings.keywordsExclude.toLowerCase().split(',').map(k => k.trim());
+    const excludes = settings.keywordsExclude.toLowerCase().split(',').map(k => k.trim()).filter(Boolean);
     const jobContent = (job.title + ' ' + (job.description || '')).toLowerCase();
     if (excludes.some(k => jobContent.includes(k))) {
       console.log(`Filtering out job ${job.id} because it matches exclude keywords`);
@@ -59,13 +61,14 @@ function applyFilters(job, settings) {
 function parseHiringRate(rateText) {
   if (!rateText) return 0;
   if (rateText.includes('بعد')) return 0;
-  const match = rateText.replace(/,/g, '').match(/\d+(\.\d+)?/);
+  const match = normalizeArabicDigits(rateText).replace(/[,٬]/g, '').match(/\d+(\.\d+)?/);
   if (match) return parseFloat(match[0]);
   return 0;
 }
 
 function parseDurationDays(durationText) {
-  const match = durationText.match(/\d+/);
+  if (!durationText) return 0;
+  const match = normalizeArabicDigits(durationText).match(/\d+/);
   if (match) return parseInt(match[0]);
   if (durationText.includes("يوم واحد")) return 1;
   return 0;
@@ -77,7 +80,7 @@ function calculateClientAgeDays(dateText) {
     'يوليو': 6, 'أغسطس': 7, 'سبتمبر': 8, 'أكتوبر': 9, 'نوفمبر': 10, 'ديسمبر': 11
   };
 
-  const parts = dateText.split(' ');
+  const parts = normalizeArabicDigits(dateText).trim().split(/\s+/);
   if (parts.length < 3) return -1;
 
   const day = parseInt(parts[0]);
@@ -89,13 +92,14 @@ function calculateClientAgeDays(dateText) {
 
   const regDate = new Date(year, month, day);
   const now = new Date();
-  const diffTime = Math.abs(now - regDate);
+  const diffTime = now - regDate;
+  if (diffTime < 0) return -1;
   return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 }
 
 function parseBudgetValue(budgetText) {
   if (!budgetText) return 0;
-  const matches = budgetText.replace(/,/g, '').match(/\d+(\.\d+)?/g);
+  const matches = normalizeArabicDigits(budgetText).replace(/[,٬]/g, '').match(/\d+(\.\d+)?/g);
   if (!matches) return 0;
   return Math.max(...matches.map(m => parseFloat(m)));
 }
@@ -108,6 +112,10 @@ function isQuietHour(settings) {
 
   const [startH, startM] = settings.quietHoursStart.split(':').map(Number);
   const [endH, endM] = settings.quietHoursEnd.split(':').map(Number);
+
+  if (![startH, startM, endH, endM].every(Number.isFinite)) return false;
+  if (startH < 0 || startH > 23 || endH < 0 || endH > 23) return false;
+  if (startM < 0 || startM > 59 || endM < 0 || endM > 59) return false;
 
   const startMinutes = startH * 60 + startM;
   const endMinutes = endH * 60 + endM;

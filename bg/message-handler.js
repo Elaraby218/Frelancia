@@ -29,8 +29,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === 'testSound') {
-    playSound();
-    sendResponse({ success: true });
+    playSound()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
@@ -69,12 +70,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'clearHistory') {
     chrome.storage.local.set({
       seenJobs: [],
+      recentJobs: [],
       stats: {
         lastCheck: null,
+        lastAttempt: null,
+        lastError: null,
         todayCount: 0,
         todayDate: new Date().toDateString()
       }
-    }).then(() => sendResponse({ success: true }));
+    })
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 

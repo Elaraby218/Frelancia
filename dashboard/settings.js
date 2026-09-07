@@ -11,9 +11,9 @@ function saveAllSettings() {
     const settings = {
         keywordsInclude:  getVal('keywordsInclude'),
         keywordsExclude:  getVal('keywordsExclude'),
-        minBudget:        parseInt(getVal('minBudget'))      || 0,
-        minHiringRate:    parseInt(getVal('minHiringRate'))  || 0,
-        maxDuration:      parseInt(getVal('maxDuration'))    || 0,
+        minBudget:        Math.max(0, parseInt(getVal('minBudget')) || 0),
+        minHiringRate:    Math.min(100, Math.max(0, parseInt(getVal('minHiringRate')) || 0)),
+        maxDuration:      Math.max(0, parseInt(getVal('maxDuration')) || 0),
         development:      getVal('cat-development'),
         ai:               getVal('cat-ai'),
         all:              getVal('cat-all'),
@@ -21,7 +21,7 @@ function saveAllSettings() {
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
-        interval:         parseInt(getVal('checkInterval'))  || 1,
+        interval:         Math.min(1440, Math.max(0.5, parseFloat(getVal('checkInterval')) || 1)),
         systemEnabled:    getVal('systemToggle'),
         notificationMode: getVal('notificationMode') || 'auto',
         signalrServerUrl: getVal('signalrServerUrl') || ''

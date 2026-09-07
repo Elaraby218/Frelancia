@@ -30,3 +30,31 @@ function getProjectId() {
     const match = window.location.pathname.match(/\/project\/(\d+)/);
     return match ? match[1] : '';
 }
+
+function escapeFrelanciaHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function safeMostaqlUrl(value, fallback = '#') {
+    try {
+        const url = new URL(String(value || ''), 'https://mostaql.com');
+        const isMostaql = url.protocol === 'https:'
+            && (url.hostname === 'mostaql.com' || url.hostname.endsWith('.mostaql.com'));
+        return isMostaql ? url.href : fallback;
+    } catch (_) {
+        return fallback;
+    }
+}
+
+function normalizeFrelanciaDigits(value) {
+    const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+    const easternArabicIndic = '۰۱۲۳۴۵۶۷۸۹';
+    return String(value ?? '')
+        .replace(/[٠-٩]/g, digit => arabicIndic.indexOf(digit))
+        .replace(/[۰-۹]/g, digit => easternArabicIndic.indexOf(digit));
+}

@@ -58,4 +58,6 @@ importScripts(
     return;
   }
   await initializeSignalR();
-})();
+})().catch((error) => {
+  console.error('Service worker startup failed:', error);
+});

@@ -17,7 +17,8 @@ global.chrome = {
       callback('test-notification');
     },
     onClicked: { addListener() {} },
-    onButtonClicked: { addListener() {} }
+    onButtonClicked: { addListener() {} },
+    onClosed: { addListener() {} }
   },
   storage: {
     local: {

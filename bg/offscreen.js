@@ -2,58 +2,71 @@
 // bg/offscreen.js — Offscreen document bridge
 // ==========================================
 
-async function setupOffscreenDocument() {
-  const existing = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT']
-  });
+let offscreenSetupPromise = null;
 
-  if (existing.length === 0) {
-    await chrome.offscreen.createDocument({
-      url: 'offscreen.html',
-      reasons: ['AUDIO_PLAYBACK', 'DOM_PARSER'],
-      justification: 'Parsing HTML and Playing Audio'
+async function setupOffscreenDocument() {
+  if (offscreenSetupPromise) return offscreenSetupPromise;
+
+  offscreenSetupPromise = (async () => {
+    const existing = await chrome.runtime.getContexts({
+      contextTypes: ['OFFSCREEN_DOCUMENT']
     });
+
+    if (existing.length === 0) {
+      await chrome.offscreen.createDocument({
+        url: 'offscreen.html',
+        reasons: ['AUDIO_PLAYBACK', 'DOM_PARSER'],
+        justification: 'Parse Mostaql HTML and play notification audio'
+      });
+    }
+  })();
+
+  try {
+    await offscreenSetupPromise;
+  } finally {
+    offscreenSetupPromise = null;
   }
 }
 
-async function parseJobsOffscreen(html) {
-  try {
-    await setupOffscreenDocument();
-    await new Promise(r => setTimeout(r, 100));
+async function sendOffscreenMessage(message, timeoutMs = 5000) {
+  await setupOffscreenDocument();
 
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: 'parseJobs', html: html }, (response) => {
-        if (chrome.runtime.lastError) {
-          console.error('Parse Error:', chrome.runtime.lastError);
-          resolve([]);
-        } else if (response && response.success) {
-          resolve(response.jobs);
-        } else {
-          resolve([]);
-        }
-      });
-      setTimeout(() => resolve([]), 3000);
+  return new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (handler, value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeoutId);
+      handler(value);
+    };
+    const timeoutId = setTimeout(() => {
+      finish(reject, new Error(`Offscreen action "${message.action}" timed out.`));
+    }, timeoutMs);
+
+    chrome.runtime.sendMessage(message, (response) => {
+      if (chrome.runtime.lastError) {
+        finish(reject, new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      finish(resolve, response);
     });
-  } catch (e) {
-    console.error('Offscreen Parse Error:', e);
-    return [];
+  });
+}
+
+async function parseJobsOffscreen(html) {
+  const response = await sendOffscreenMessage({ action: 'parseJobs', html });
+  if (!response?.success || !Array.isArray(response.jobs)) {
+    throw new Error(response?.error || 'Offscreen parser returned an invalid jobs response.');
   }
+  return response.jobs;
 }
 
 async function parseTrackedDataOffscreen(html) {
   try {
-    await setupOffscreenDocument();
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: 'parseTrackedData', html: html }, (response) => {
-        if (response && response.success) {
-          resolve(response.data);
-        } else {
-          resolve(null);
-        }
-      });
-      setTimeout(() => resolve(null), 3000);
-    });
+    const response = await sendOffscreenMessage({ action: 'parseTrackedData', html });
+    return response?.success ? response.data : null;
   } catch (e) {
+    console.error('Tracked project parsing failed:', e);
     return null;
   }
 }

@@ -7,16 +7,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(`Offscreen: Received action: ${message.action}`);
 
   if (message.action === 'playSound') {
-    playNotificationSound().then(() => sendResponse({ success: true }));
+    playNotificationSound()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   } else if (message.action === 'parseJobs') {
-    const jobs = parseMostaqlHTML(message.html);
-    sendResponse({ success: true, jobs: jobs });
+    try {
+      const jobs = parseMostaqlHTML(message.html);
+      sendResponse({ success: true, jobs });
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
   } else if (message.action === 'parseTrackedData' || message.action === 'parseProjectDetails') {
-    const data = parseProjectDetails(message.html);
-    sendResponse({ success: true, data: data });
+    try {
+      const data = parseProjectDetails(message.html);
+      sendResponse({ success: true, data });
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
   } else if (message.action === 'playTrackedSound') {
-    playTrackedSound().then(() => sendResponse({ success: true }));
+    playTrackedSound()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 });

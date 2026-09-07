@@ -84,17 +84,7 @@ async function fetchProjectDetails(url) {
     }
 
     const html = await response.text();
-    await setupOffscreenDocument();
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: 'parseProjectDetails', html: html }, (response) => {
-        if (response && response.success) {
-          resolve(response.data);
-        } else {
-          resolve(null);
-        }
-      });
-      setTimeout(() => resolve(null), 3000);
-    });
+    return await parseTrackedDataOffscreen(html);
   } catch (error) {
     console.error('Error fetching project details:', error);
     return null;

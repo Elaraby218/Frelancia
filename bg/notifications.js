@@ -41,6 +41,10 @@ function formatNotificationBudget(budget) {
 }
 
 function showNotification(jobs) {
+  if (!Array.isArray(jobs) || jobs.length === 0) {
+    return Promise.reject(new Error('Cannot create a job notification without jobs.'));
+  }
+
   const job = jobs[0];
   const title = jobs.length === 1
     ? 'مشروع جديد على مستقل'
@@ -127,4 +131,8 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
 
     chrome.storage.local.remove([`notification_${notificationId}`]);
   });
+});
+
+chrome.notifications.onClosed.addListener((notificationId) => {
+  chrome.storage.local.remove([`notification_${notificationId}`]);
 });

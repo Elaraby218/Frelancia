@@ -126,7 +126,7 @@ function renderBidStatusCards(byStatus, total) {
                 </div>
                 <div class="bid-status-info">
                     <span class="bid-status-count">${count}</span>
-                    <span class="bid-status-label">${config.label}</span>
+                    <span class="bid-status-label">${escapeDashboardHtml(config.label)}</span>
                 </div>
                 <span class="bid-status-pct" style="color: ${config.color};">${pct}%</span>
             </div>
@@ -164,21 +164,25 @@ function renderBidTimeline(bids) {
         });
         const statusClass = getStatusCssClass(bid.status);
         const displayStatus = bid.status || 'بانتظار';
+        const safeUrl = escapeDashboardHtml(safeDashboardUrl(bid.url));
+        const safeTitle = escapeDashboardHtml(bid.title || 'عرض بدون عنوان');
+        const safeStatus = escapeDashboardHtml(displayStatus);
+        const safePrice = escapeDashboardHtml(bid.price);
 
         return `
             <div class="bid-timeline-item" data-index="${index}">
                 <div class="bid-timeline-marker" style="background: ${color};"></div>
                 <div class="bid-timeline-content">
                     <div class="bid-timeline-header">
-                        <a href="${bid.url || '#'}" target="_blank" class="bid-timeline-title">
-                            ${bid.title || 'عرض بدون عنوان'}
+                        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="bid-timeline-title">
+                            ${safeTitle}
                         </a>
-                        <span class="bid-timeline-status ${statusClass}">${displayStatus}</span>
+                        <span class="bid-timeline-status ${statusClass}">${safeStatus}</span>
                     </div>
                     <div class="bid-timeline-meta">
                         <span><i class="fas fa-calendar-alt"></i> ${appliedDate}</span>
                         <span><i class="fas fa-clock"></i> ${appliedTime}</span>
-                        ${bid.price ? `<span><i class="fas fa-dollar-sign"></i> ${bid.price}</span>` : ''}
+                        ${bid.price ? `<span><i class="fas fa-dollar-sign"></i> ${safePrice}</span>` : ''}
                     </div>
                     <div class="bid-timeline-progress">
                         <div class="bid-progress-bar">

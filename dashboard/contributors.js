@@ -27,16 +27,22 @@ function renderContributors(listEl, contributors) {
     contributors.forEach(user => {
         const card = document.createElement('div');
         card.className = 'about-card';
+        const login = escapeDashboardHtml(user.login || 'GitHub contributor');
+        const avatarUrl = escapeDashboardHtml(safeDashboardUrl(user.avatar_url, REPOSITORY_CONTRIBUTOR.avatar_url));
+        const profileUrl = escapeDashboardHtml(safeDashboardUrl(user.html_url, REPOSITORY_CONTRIBUTOR.html_url));
+        const contributions = Number.isFinite(Number(user.contributions))
+            ? Math.max(0, Math.trunc(Number(user.contributions)))
+            : 0;
         card.innerHTML = `
             <div class="profile-header">
-                <img src="${user.avatar_url}" alt="${user.login}" class="profile-avatar" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover;">
+                <img src="${avatarUrl}" alt="${login}" class="profile-avatar" style="width: 54px; height: 54px; border-radius: 50%; object-fit: cover;">
                 <div class="profile-info">
-                    <h3>${user.login}</h3>
-                    <p style="font-size: 12px; color: var(--text-muted);">${user.contributions} مساهمة</p>
+                    <h3>${login}</h3>
+                    <p style="font-size: 12px; color: var(--text-muted);">${contributions} مساهمة</p>
                 </div>
             </div>
             <div class="profile-social">
-                <a href="${user.html_url}" target="_blank" rel="noopener noreferrer" class="social-btn github">
+                <a href="${profileUrl}" target="_blank" rel="noopener noreferrer" class="social-btn github">
                     <i class="fab fa-github"></i>
                     GitHub
                 </a>
@@ -58,13 +64,9 @@ async function loadContributors() {
         renderContributors(listEl, includeRepositoryContributor(githubContributors));
     } catch (err) {
         console.error('Error fetching contributors:', err);
-        listEl.innerHTML = `
-            <div style="grid-column: 1/-1; text-align: center; padding: 20px;">
-                <p style="color: var(--danger);">عذراً، تعذر تحميل قائمة المساهمين حالياً.</p>
-                <button class="btn-primary btn-retry-contributors" style="margin-top: 10px; padding: 8px 16px; font-size: 12px;">إعادة المحاولة</button>
-            </div>
-        `;
-        setupContributorsListeners();
+        // GitHub can rate-limit unauthenticated requests. Keep the repository
+        // contributor visible using the exact same normal card in that case.
+        renderContributors(listEl, [REPOSITORY_CONTRIBUTOR]);
     }
 }
 
