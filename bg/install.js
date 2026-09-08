@@ -5,7 +5,7 @@
 
 function normalizeCheckInterval(value) {
   const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? Math.min(1440, Math.max(0.5, parsed)) : 1;
+  return Number.isFinite(parsed) ? Math.min(1440, Math.max(2, parsed)) : 2;
 }
 
 async function ensureCheckJobsAlarm() {
@@ -41,9 +41,10 @@ async function initializeExtensionStorage() {
     ai: true,
     all: true,
     sound: true,
-    interval: 1,
+    interval: 2,
     systemEnabled: true,
-    notificationMode: 'auto'
+    notificationMode: 'auto',
+    authenticatedPolling: false
   };
   const storedSettings = data.settings && typeof data.settings === 'object'
     ? data.settings
@@ -62,6 +63,7 @@ async function initializeExtensionStorage() {
       lastCheck: null,
       lastAttempt: null,
       lastError: null,
+      nextCheckAllowedAt: null,
       todayCount: 0,
       todayDate: new Date().toDateString()
     };

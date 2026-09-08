@@ -12,6 +12,7 @@ let sourceResponses = {};
 let notificationCalls = [];
 let notificationFailure = null;
 let freshnessCheck = () => true;
+let fetchCalls = [];
 
 global.chrome = {
   storage: {
@@ -30,7 +31,8 @@ global.MOSTAQL_URLS = {
   ai: 'ai',
   all: 'all'
 };
-global.fetchJobs = async (url) => {
+global.fetchJobs = async (url, useAuthenticatedSession) => {
+  fetchCalls.push({ url, useAuthenticatedSession });
   const response = sourceResponses[url];
   if (response instanceof Error) throw response;
   return structuredClone(response || []);
@@ -50,7 +52,7 @@ vm.runInThisContext(checkerSource, { filename: checkerPath });
 
 function reset(overrides = {}) {
   for (const key of Object.keys(store)) delete store[key];
-  Object.assign(store, {
+  const defaults = {
     settings: {
       development: true,
       ai: true,
@@ -66,20 +68,24 @@ function reset(overrides = {}) {
       lastCheck: new Date(Date.now() - 60 * 1000).toISOString()
     },
     notificationsEnabled: true,
-    ...overrides
-  });
+  };
+  Object.assign(store, defaults, overrides);
+  store.settings = { ...defaults.settings, ...(overrides.settings || {}) };
   notificationCalls = [];
   notificationFailure = null;
   freshnessCheck = () => true;
   sourceResponses = {};
+  fetchCalls = [];
 }
 
 async function testDeduplicatesSourcesAndNotifies() {
-  reset();
+  reset({ settings: { all: false } });
   sourceResponses = {
     development: [{ id: 101, title: 'First', url: 'https://mostaql.com/project/101-first' }],
-    ai: [{ id: '101', title: 'First', url: 'https://mostaql.com/project/101-first' }],
-    all: [{ id: 102, title: 'Second', url: 'https://mostaql.com/project/102-second' }]
+    ai: [
+      { id: '101', title: 'First', url: 'https://mostaql.com/project/101-first' },
+      { id: 102, title: 'Second', url: 'https://mostaql.com/project/102-second' }
+    ]
   };
 
   const result = await global.__jobChecker.checkForNewJobs();
@@ -89,6 +95,18 @@ async function testDeduplicatesSourcesAndNotifies() {
   assert.equal(notificationCalls.length, 1);
   assert.deepEqual(notificationCalls[0].map(job => job.id), ['101', '102']);
   assert.deepEqual(store.seenJobs, ['101', '102']);
+}
+
+async function testAllSourceReplacesOverlappingCategoryRequests() {
+  reset({ settings: { authenticatedPolling: true } });
+  sourceResponses = {
+    all: [{ id: 150, title: 'One request', url: 'https://mostaql.com/project/150-one-request' }]
+  };
+
+  const result = await global.__jobChecker.checkForNewJobs();
+
+  assert.equal(result.success, true);
+  assert.deepEqual(fetchCalls, [{ url: 'all', useAuthenticatedSession: true }]);
 }
 
 async function testReportsTotalFetchFailure() {
@@ -109,14 +127,19 @@ async function testReportsTotalFetchFailure() {
   assert.deepEqual(store.seenJobs, []);
   assert.equal(store.stats.lastCheck, undefined);
   assert.ok(store.stats.lastAttempt);
+  assert.ok(store.stats.nextCheckAllowedAt);
+  assert.ok(store.mostaqlBackoffUntil > Date.now());
+
+  const retryResult = await global.__jobChecker.checkForNewJobs();
+  assert.equal(retryResult.skipped, true);
+  assert.equal(retryResult.reason, 'mostaql-backoff');
+  assert.equal(fetchCalls.length, 1);
 }
 
 async function testRetriesAfterNotificationFailure() {
   reset();
   sourceResponses = {
-    development: [{ id: 201, title: 'Retry me', url: 'https://mostaql.com/project/201-retry' }],
-    ai: [],
-    all: []
+    all: [{ id: 201, title: 'Retry me', url: 'https://mostaql.com/project/201-retry' }]
   };
   notificationFailure = new Error('Notifications are blocked');
 
@@ -133,9 +156,7 @@ async function testInitialCheckCreatesBaselineWithoutBacklog() {
     stats: { todayCount: 0, todayDate: new Date().toDateString() }
   });
   sourceResponses = {
-    development: [{ id: 301, title: 'Existing', url: 'https://mostaql.com/project/301-existing' }],
-    ai: [],
-    all: []
+    all: [{ id: 301, title: 'Existing', url: 'https://mostaql.com/project/301-existing' }]
   };
 
   const result = await global.__jobChecker.checkForNewJobs();
@@ -151,12 +172,10 @@ async function testOldProjectsAreIgnored() {
   reset();
   freshnessCheck = job => job.id === '402';
   sourceResponses = {
-    development: [
+    all: [
       { id: 401, title: 'Old', url: 'https://mostaql.com/project/401-old' },
       { id: 402, title: 'New', url: 'https://mostaql.com/project/402-new' }
-    ],
-    ai: [],
-    all: []
+    ]
   };
 
   const result = await global.__jobChecker.checkForNewJobs();
@@ -169,6 +188,7 @@ async function testOldProjectsAreIgnored() {
 
 (async () => {
   await testDeduplicatesSourcesAndNotifies();
+  await testAllSourceReplacesOverlappingCategoryRequests();
   await testReportsTotalFetchFailure();
   await testRetriesAfterNotificationFailure();
   await testInitialCheckCreatesBaselineWithoutBacklog();

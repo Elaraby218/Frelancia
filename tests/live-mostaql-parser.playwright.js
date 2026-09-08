@@ -20,8 +20,8 @@ async (page) => {
   const freshJobs = await page.evaluate(
     (jobs) => jobs.filter(job => isRecentlyPublishedJob(
       job,
-      { interval: 1 },
-      new Date(Date.now() - 60 * 1000).toISOString()
+      { interval: 2 },
+      new Date(Date.now() - 2 * 60 * 1000).toISOString()
     )),
     parsedJobs
   );

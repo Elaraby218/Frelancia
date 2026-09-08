@@ -30,6 +30,14 @@ global.chrome = {
   tabs: { create() {} }
 };
 global.parseDurationDays = () => 0;
+global.normalizeMostaqlUrl = (value, options = {}) => {
+  const parsed = new URL(value);
+  if (parsed.origin !== 'https://mostaql.com') throw new Error('unsafe URL');
+  if (options.projectOnly && !/^\/project\/\d+(?:[-/]|$)/.test(parsed.pathname)) {
+    throw new Error('unsafe project URL');
+  }
+  return parsed.toString();
+};
 
 vm.runInThisContext(notificationsSource, { filename: notificationsPath });
 
@@ -56,11 +64,23 @@ async function testRealBudgetIsIncluded() {
   assert.equal(createdOptions.message, 'مشروع آخر [ 250 - 500 دولار ]');
 }
 
+async function testUnsafeProjectUrlIsRejected() {
+  await assert.rejects(
+    global.__notifications.showNotification([{
+      id: '3',
+      title: 'Unsafe project',
+      url: 'https://example.com/project/3'
+    }]),
+    /unsafe project URL/
+  );
+}
+
 (async () => {
   assert.equal(global.__notifications.formatNotificationBudget(' غير معروفة '), '');
   assert.equal(global.__notifications.formatNotificationBudget('N/A'), '');
   await testUnknownBudgetIsOmitted();
   await testRealBudgetIsIncluded();
+  await testUnsafeProjectUrlIsRejected();
   console.log('notification-format tests passed');
 })().catch((error) => {
   console.error(error);

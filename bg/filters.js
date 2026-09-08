@@ -194,7 +194,7 @@ function isRecentlyPublishedJob(job, settings, lastSuccessfulCheck, nowMs = Date
   const publishedAt = parseMostaqlPublishedAt(job, nowMs);
   if (!Number.isFinite(publishedAt)) return false;
 
-  const interval = Math.max(0.5, Number(settings?.interval) || 1);
+  const interval = Math.max(2, Number(settings?.interval) || 2);
   const graceMinutes = Math.min(5, Math.max(2, interval));
   const maximumLookbackMinutes = 10;
   const lastCheckMs = lastSuccessfulCheck ? Date.parse(lastSuccessfulCheck) : NaN;

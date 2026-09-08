@@ -21,9 +21,10 @@ function saveAllSettings() {
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
-        interval:         Math.min(1440, Math.max(0.5, parseFloat(getVal('checkInterval')) || 1)),
+        interval:         Math.min(1440, Math.max(2, parseFloat(getVal('checkInterval')) || 2)),
         systemEnabled:    getVal('systemToggle'),
         notificationMode: getVal('notificationMode') || 'auto',
+        authenticatedPolling: getVal('authenticatedPolling') === true,
         signalrServerUrl: getVal('signalrServerUrl') || ''
     };
 
@@ -67,9 +68,10 @@ function applySettingsToForm(s) {
     setVal('quietHoursEnabled', s.quietHoursEnabled === true);
     setVal('quietHoursStart',   s.quietHoursStart);
     setVal('quietHoursEnd',     s.quietHoursEnd);
-    setVal('checkInterval',     s.interval || 1);
+    setVal('checkInterval',     s.interval || 2);
     setVal('systemToggle',      s.systemEnabled !== false);
     setVal('notificationMode',  s.notificationMode || 'auto');
+    setVal('authenticatedPolling', s.authenticatedPolling === true);
     setVal('signalrServerUrl',  s.signalrServerUrl || '');
 }
 

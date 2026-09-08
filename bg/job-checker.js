@@ -27,14 +27,25 @@ function filtersNeedProjectDetails(settings) {
   );
 }
 
-async function enrichJob(job) {
+async function enrichJob(job, useAuthenticatedSession = false) {
   try {
-    const details = await fetchProjectDetails(job.url);
+    const details = await fetchProjectDetails(job.url, useAuthenticatedSession);
     return details ? { ...job, ...details, id: String(job.id) } : job;
   } catch (error) {
     console.warn(`Could not enrich project ${job.id}; using listing data.`, error);
     return job;
   }
+}
+
+function getEnabledMostaqlSources(settings) {
+  // The unfiltered latest-projects page already contains the category results.
+  // Prefer one request when it is enabled to avoid duplicate, bursty polling.
+  if (settings.all !== false && MOSTAQL_URLS.all) {
+    return [['all', MOSTAQL_URLS.all]];
+  }
+
+  return Object.entries(MOSTAQL_URLS)
+    .filter(([category]) => category !== 'all' && settings[category] !== false);
 }
 
 async function mapWithConcurrency(items, limit, mapper) {
@@ -60,12 +71,24 @@ async function runJobCheck() {
       'seenJobs',
       'stats',
       'recentJobs',
-      'notificationsEnabled'
+      'notificationsEnabled',
+      'mostaqlBackoffUntil'
     ]);
     const settings = data.settings || {};
 
     if (settings.systemEnabled === false) {
       return { success: true, skipped: true, reason: 'system-paused' };
+    }
+
+    const backoffUntil = Number(data.mostaqlBackoffUntil) || 0;
+    if (backoffUntil > Date.now()) {
+      console.warn(`Mostaql polling is paused until ${new Date(backoffUntil).toISOString()}.`);
+      return {
+        success: false,
+        skipped: true,
+        reason: 'mostaql-backoff',
+        retryAt: new Date(backoffUntil).toISOString()
+      };
     }
 
     const seenJobIds = new Set((data.seenJobs || []).map(String));
@@ -79,16 +102,16 @@ async function runJobCheck() {
       stats.todayDate = today;
     }
 
-    const enabledSources = Object.entries(MOSTAQL_URLS)
-      .filter(([category]) => settings[category] !== false);
+    const enabledSources = getEnabledMostaqlSources(settings);
     const discoveredJobs = new Map();
     const sourceErrors = [];
+    const requestedBackoffs = [];
     let successfulSources = 0;
 
     for (const [category, url] of enabledSources) {
       try {
         console.log(`Checking category: ${category}`);
-        const jobs = await fetchJobs(url);
+        const jobs = await fetchJobs(url, settings.authenticatedPolling === true);
         successfulSources++;
         console.log(`Found ${jobs.length} total jobs in ${category}`);
 
@@ -102,6 +125,9 @@ async function runJobCheck() {
       } catch (error) {
         const message = `${category}: ${error.message || String(error)}`;
         sourceErrors.push(message);
+        if (Number.isFinite(error.backoffMs) && error.backoffMs > 0) {
+          requestedBackoffs.push(error.backoffMs);
+        }
         console.error(`Mostaql source failed (${message})`);
       }
     }
@@ -111,9 +137,21 @@ async function runJobCheck() {
 
     if (enabledSources.length > 0 && successfulSources === 0) {
       stats.lastError = sourceErrors.join(' | ') || 'All Mostaql sources failed.';
-      await chrome.storage.local.set({ stats });
-      return { success: false, error: stats.lastError, newJobs: 0 };
+      const delay = requestedBackoffs.length > 0
+        ? Math.max(...requestedBackoffs)
+        : 2 * 60 * 1000;
+      const nextBackoffUntil = Date.now() + delay;
+      stats.nextCheckAllowedAt = new Date(nextBackoffUntil).toISOString();
+      await chrome.storage.local.set({ stats, mostaqlBackoffUntil: nextBackoffUntil });
+      return {
+        success: false,
+        error: stats.lastError,
+        newJobs: 0,
+        retryAt: stats.nextCheckAllowedAt
+      };
     }
+
+    stats.nextCheckAllowedAt = null;
 
     const unseenJobs = Array.from(discoveredJobs.values());
     const establishingBaseline = !stats.lastCheck && seenJobIds.size === 0;
@@ -132,7 +170,11 @@ async function runJobCheck() {
     if (newJobs.length > 0 && filtersNeedProjectDetails(settings)) {
       // Bounded concurrency avoids spending minutes fetching project details
       // serially on a first run with many unseen projects.
-      newJobs = await mapWithConcurrency(newJobs, 4, enrichJob);
+      newJobs = await mapWithConcurrency(
+        newJobs,
+        4,
+        job => enrichJob(job, settings.authenticatedPolling === true)
+      );
     }
 
     const qualityJobs = newJobs.filter(job => applyFilters(job, settings));
@@ -179,7 +221,12 @@ async function runJobCheck() {
       : (sourceErrors.length > 0 ? sourceErrors.join(' | ') : null);
     stats.todayCount += qualityJobs.length - retryIds.size;
 
-    await chrome.storage.local.set({ seenJobs, stats, recentJobs });
+    await chrome.storage.local.set({
+      seenJobs,
+      stats,
+      recentJobs,
+      mostaqlBackoffUntil: null
+    });
 
     if (notificationError) {
       return { success: false, error: stats.lastError, newJobs: qualityJobs.length };

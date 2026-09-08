@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       id: 'test-' + Date.now(),
       title: 'هذا إشعار تجريبي - مشروع تطوير موقع إلكتروني',
       budget: '500 $',
-      url: 'https://mostaql.com/projects'
+      url: 'https://mostaql.com/project/1-notification-test'
     }];
     showNotification(testJobs)
       .then((notificationId) => sendResponse({ success: true, notificationId }))
@@ -77,7 +77,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         lastError: null,
         todayCount: 0,
         todayDate: new Date().toDateString()
-      }
+      },
+      mostaqlBackoffUntil: null
     })
       .then(() => sendResponse({ success: true }))
       .catch((error) => sendResponse({ success: false, error: error.message }));

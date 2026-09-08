@@ -173,7 +173,24 @@ class SignalRClient {
         const establishingBaseline = !stats.lastCheck && seenJobs.length === 0;
 
         for (const job of jobs) {
-            const normalizedJob = { ...job, id: String(job.id) };
+            if (!job || job.id === undefined || job.id === null) {
+                console.warn('SignalR: Ignoring a job without an id.');
+                continue;
+            }
+
+            let safeProjectUrl;
+            try {
+                safeProjectUrl = normalizeMostaqlUrl(job.url, { projectOnly: true });
+            } catch (error) {
+                console.warn(`SignalR: Ignoring job ${job.id} with an unsafe URL.`, error);
+                continue;
+            }
+
+            const normalizedJob = {
+                ...job,
+                id: String(job.id),
+                url: safeProjectUrl
+            };
 
             if (seenJobs.includes(normalizedJob.id)) {
                 console.log(`SignalR: Skipping already seen job ${normalizedJob.id}`);
