@@ -341,7 +341,7 @@
                         </div>
                         <div class="form-group">
                             <label>تكرار الفحص (بالدقائق)</label>
-                            <input type="number" id="checkInterval" class="form-control" placeholder="مثلاً: 1" min="1">
+                            <input type="number" id="checkInterval" class="form-control" placeholder="مثلاً: 2" min="2">
                             <p class="help-text">عدد الدقائق بين كل عملية فحص للمشاريع الجديدة.</p>
                         </div>
                     </div>
@@ -354,12 +354,12 @@
                         <div class="form-group">
                             <label>طريقة استقبال المشاريع الجديدة</label>
                             <select id="notificationMode" class="form-control">
-                                <option value="auto">تلقائي (SignalR مع احتياطي)</option>
+                                <option value="auto">تلقائي (SignalR + فحص دوري احتياطي)</option>
                                 <option value="signalr">اتصال مباشر فقط (SignalR)</option>
                                 <option value="polling">استعلام دوري فقط (Polling)</option>
                             </select>
                             <p class="help-text">
-                                <strong>تلقائي:</strong> يبدأ بالاتصال المباشر، ويتحول للاستعلام تلقائياً عند انقطاع السيرفر.<br>
+                                <strong>تلقائي:</strong> يستخدم الاتصال المباشر مع فحص دوري آمن كشبكة احتياطية.<br>
                                 <strong>اتصال مباشر:</strong> إشعارات فورية عبر السيرفر (بدون طلبات HTTP).<br>
                                 <strong>استعلام دوري:</strong> يفحص الموقع كل فترة زمنية محددة.
                             </p>
@@ -369,6 +369,14 @@
                             <input type="text" id="signalrServerUrl" class="form-control" placeholder="https://frelancia.runasp.net/jobNotificationHub" dir="ltr">
                             <p class="help-text">اتركه فارغاً لاستخدام السيرفر الافتراضي. يُطبَّق عند الحفظ ويُعاد الاتصال تلقائياً.</p>
                         </div>
+                        <div class="toggle-row">
+                            <span>استخدام جلسة مستقل في الفحص الدوري</span>
+                            <label class="switch">
+                                <input type="checkbox" id="authenticatedPolling">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <p class="help-text">متوقف افتراضياً للخصوصية. فعّله فقط إذا رفض مستقل الفحص العام؛ عندها تُرسل كوكيز جلسة مستقل إلى mostaql.com فقط.</p>
                     </div>
 
                     <div class="settings-section">
@@ -558,6 +566,7 @@
     </div>
 
     <!-- dashboard-bids modules (load order matters) -->
+    <script src="dashboard/sanitize.js"></script>
     <script src="dashboard-bids/constants.js"></script>
     <script src="dashboard-bids/api.js"></script>
     <script src="dashboard-bids/data.js"></script>

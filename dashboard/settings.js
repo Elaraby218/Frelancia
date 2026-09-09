@@ -11,9 +11,9 @@ function saveAllSettings() {
     const settings = {
         keywordsInclude:  getVal('keywordsInclude'),
         keywordsExclude:  getVal('keywordsExclude'),
-        minBudget:        parseInt(getVal('minBudget'))      || 0,
-        minHiringRate:    parseInt(getVal('minHiringRate'))  || 0,
-        maxDuration:      parseInt(getVal('maxDuration'))    || 0,
+        minBudget:        Math.max(0, parseInt(getVal('minBudget')) || 0),
+        minHiringRate:    Math.min(100, Math.max(0, parseInt(getVal('minHiringRate')) || 0)),
+        maxDuration:      Math.max(0, parseInt(getVal('maxDuration')) || 0),
         development:      getVal('cat-development'),
         ai:               getVal('cat-ai'),
         all:              getVal('cat-all'),
@@ -21,9 +21,10 @@ function saveAllSettings() {
         quietHoursEnabled: getVal('quietHoursEnabled'),
         quietHoursStart:  getVal('quietHoursStart'),
         quietHoursEnd:    getVal('quietHoursEnd'),
-        interval:         parseInt(getVal('checkInterval'))  || 1,
+        interval:         Math.min(1440, Math.max(2, parseFloat(getVal('checkInterval')) || 2)),
         systemEnabled:    getVal('systemToggle'),
         notificationMode: getVal('notificationMode') || 'auto',
+        authenticatedPolling: getVal('authenticatedPolling') === true,
         signalrServerUrl: getVal('signalrServerUrl') || ''
     };
 
@@ -67,9 +68,10 @@ function applySettingsToForm(s) {
     setVal('quietHoursEnabled', s.quietHoursEnabled === true);
     setVal('quietHoursStart',   s.quietHoursStart);
     setVal('quietHoursEnd',     s.quietHoursEnd);
-    setVal('checkInterval',     s.interval || 1);
+    setVal('checkInterval',     s.interval || 2);
     setVal('systemToggle',      s.systemEnabled !== false);
     setVal('notificationMode',  s.notificationMode || 'auto');
+    setVal('authenticatedPolling', s.authenticatedPolling === true);
     setVal('signalrServerUrl',  s.signalrServerUrl || '');
 }
 

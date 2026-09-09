@@ -3,22 +3,70 @@
 // Depends on: filters.js (parseDurationDays)
 // ==========================================
 
+async function createStoredNotification(options, payload) {
+  const notificationId = await new Promise((resolve, reject) => {
+    chrome.notifications.create(options, (createdId) => {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(createdId);
+    });
+  });
+
+  await chrome.storage.local.set({ [`notification_${notificationId}`]: payload });
+  return notificationId;
+}
+
+function formatNotificationBudget(budget) {
+  if (typeof budget !== 'string') return '';
+
+  const normalized = budget.replace(/\s+/g, ' ').trim();
+  const unavailableValues = new Set([
+    '',
+    '-',
+    '--',
+    'غير محدد',
+    'غير محددة',
+    'غير معروف',
+    'غير معروفة',
+    'not specified',
+    'unknown',
+    'n/a'
+  ]);
+
+  return unavailableValues.has(normalized.toLocaleLowerCase())
+    ? ''
+    : `[ ${normalized} ]`;
+}
+
 function showNotification(jobs) {
-  const job = jobs[0];
+  if (!Array.isArray(jobs) || jobs.length === 0) {
+    return Promise.reject(new Error('Cannot create a job notification without jobs.'));
+  }
+
+  let safeUrl;
+  try {
+    safeUrl = normalizeMostaqlUrl(jobs[0]?.url, { projectOnly: true });
+  } catch {
+    return Promise.reject(new Error('Cannot create a notification with an unsafe project URL.'));
+  }
+
+  const job = { ...jobs[0], url: safeUrl };
   const title = jobs.length === 1
     ? 'مشروع جديد على مستقل'
     : `${jobs.length} مشاريع جديدة على مستقل`;
 
   let message = '';
   if (jobs.length === 1) {
-    const budget = job.budget ? `[ ${job.budget} ]` : '';
+    const budget = formatNotificationBudget(job.budget);
     const desc = job.description ? `\n\n${job.description.substring(0, 150)}${job.description.length > 150 ? '...' : ''}` : '';
-    message = `${job.title} ${budget}${desc}`;
+    message = `${job.title}${budget ? ` ${budget}` : ''}${desc}`;
   } else {
     message = `${job.title}\nو ${jobs.length - 1} مشاريع أخرى`;
   }
 
-  chrome.notifications.create({
+  return createStoredNotification({
     type: 'basic',
     iconUrl: 'icons/icon128.png',
     title: title,
@@ -29,22 +77,28 @@ function showNotification(jobs) {
       { title: 'قدّم الآن' },
       { title: 'فتح المشروع' }
     ]
-  }, (notificationId) => {
-    chrome.storage.local.set({ [`notification_${notificationId}`]: job });
-  });
+  }, job);
 }
 
 function showTrackedNotification(project, changeMsg) {
-  chrome.notifications.create({
+  let safeProject;
+  try {
+    safeProject = {
+      ...project,
+      url: normalizeMostaqlUrl(project?.url, { projectOnly: true })
+    };
+  } catch {
+    return Promise.reject(new Error('Cannot create a tracked notification with an unsafe project URL.'));
+  }
+
+  return createStoredNotification({
     type: 'basic',
     iconUrl: 'icons/icon128.png',
-    title: `تحديث في مشروع: ${project.title}`,
+    title: `تحديث في مشروع: ${safeProject.title}`,
     message: changeMsg,
     priority: 2,
     requireInteraction: true
-  }, (notificationId) => {
-    chrome.storage.local.set({ [`notification_${notificationId}`]: project.url });
-  });
+  }, safeProject);
 }
 
 function parseMinBudgetValue(budgetText) {
@@ -58,7 +112,11 @@ chrome.notifications.onClicked.addListener((notificationId) => {
   chrome.storage.local.get([`notification_${notificationId}`], (data) => {
     const job = data[`notification_${notificationId}`];
     if (job) {
-      chrome.tabs.create({ url: job.url });
+      try {
+        chrome.tabs.create({ url: normalizeMostaqlUrl(job.url, { projectOnly: true }) });
+      } catch (error) {
+        console.warn('Blocked an unsafe stored notification URL.', error);
+      }
       chrome.storage.local.remove([`notification_${notificationId}`]);
     }
   });
@@ -72,6 +130,14 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
     if (buttonIndex === 0) {
       console.log(`Apply Now clicked for job ${job.id}`);
       chrome.storage.local.get(['proposalTemplate'], (settingsData) => {
+        let safeProjectUrl;
+        try {
+          safeProjectUrl = normalizeMostaqlUrl(job.url, { projectOnly: true });
+        } catch (error) {
+          console.warn('Blocked an unsafe stored notification URL.', error);
+          return;
+        }
+
         const minBudget = parseMinBudgetValue(job.budget);
         const durationDays = parseDurationDays(job.duration || "");
 
@@ -84,14 +150,22 @@ chrome.notifications.onButtonClicked.addListener((notificationId, buttonIndex) =
         };
 
         chrome.storage.local.set({ 'mostaql_pending_autofill': autofillData }, () => {
-          const urlWithFlag = job.url + (job.url.includes('?') ? '&' : '?') + 'mostaql_autofill=true';
+          const urlWithFlag = safeProjectUrl + (safeProjectUrl.includes('?') ? '&' : '?') + 'mostaql_autofill=true';
           chrome.tabs.create({ url: urlWithFlag });
         });
       });
     } else {
-      chrome.tabs.create({ url: job.url });
+      try {
+        chrome.tabs.create({ url: normalizeMostaqlUrl(job.url, { projectOnly: true }) });
+      } catch (error) {
+        console.warn('Blocked an unsafe stored notification URL.', error);
+      }
     }
 
     chrome.storage.local.remove([`notification_${notificationId}`]);
   });
+});
+
+chrome.notifications.onClosed.addListener((notificationId) => {
+  chrome.storage.local.remove([`notification_${notificationId}`]);
 });

@@ -152,7 +152,7 @@ function handleQuickBidClick() {
 
         let durationDays = 0;
         if (projectData.duration) {
-            const match = projectData.duration.match(/\d+/);
+            const match = normalizeFrelanciaDigits(projectData.duration).match(/\d+/);
             if (match) durationDays = parseInt(match[0]);
             else if (projectData.duration.includes("يوم واحد")) durationDays = 1;
         }

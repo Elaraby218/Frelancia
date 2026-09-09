@@ -188,20 +188,23 @@ function _loadMonitoredData() {
         }
 
         listEl.innerHTML = `<div class="panel-listing">` + jobs.map(job => {
-            const poster   = job.clientName   ? `<li><span class="text-muted"><i class="fa fa-fw fa-user"></i> ${job.clientName}</span></li>` : '';
-            const timeAgo  = job.publishDate  ? `<li><span class="text-muted"><i class="fa fa-fw fa-clock-o"></i> ${job.publishDate}</span></li>` : '';
-            const bids     = job.communications ? `<li><span class="text-muted"><i class="fa fa-fw fa-handshake-o"></i> ${job.communications} تواصل</span></li>` : '';
-            const budget   = (job.budget && job.budget !== 'غير محدد') ? `<li><span class="text-muted"><i class="fa fa-fw fa-money"></i> ${job.budget}</span></li>` : '';
+            const poster   = job.clientName   ? `<li><span class="text-muted"><i class="fa fa-fw fa-user"></i> ${escapeFrelanciaHtml(job.clientName)}</span></li>` : '';
+            const timeAgo  = job.publishDate  ? `<li><span class="text-muted"><i class="fa fa-fw fa-clock-o"></i> ${escapeFrelanciaHtml(job.publishDate)}</span></li>` : '';
+            const bids     = job.communications ? `<li><span class="text-muted"><i class="fa fa-fw fa-handshake-o"></i> ${escapeFrelanciaHtml(job.communications)} تواصل</span></li>` : '';
+            const budget   = (job.budget && job.budget !== 'غير محدد') ? `<li><span class="text-muted"><i class="fa fa-fw fa-money"></i> ${escapeFrelanciaHtml(job.budget)}</span></li>` : '';
             const status   = job.status || 'مفتوح';
             let statusCls  = 'label-prj-open';
             if (status.includes('تنفيذ') || status.includes('جارٍ')) statusCls = 'label-prj-processing';
             if (status.includes('مغلق') || status.includes('مكتمل') || status.includes('ملغى')) statusCls = 'label-prj-closed';
             const meta = [poster, timeAgo, bids, budget].filter(Boolean).join('');
+            const safeUrl = escapeFrelanciaHtml(safeMostaqlUrl(job.url));
+            const safeTitle = escapeFrelanciaHtml(job.title || 'بدون عنوان');
+            const safeStatus = escapeFrelanciaHtml(status);
             return `
                 <div class="list-group-item brd--b mrg--an">
                     <h5 class="listing__title project__title mrg--bt-reset">
-                        <a href="${job.url}" target="_blank">${job.title || 'بدون عنوان'}</a>
-                        <span class="label ${statusCls}" style="font-size:10px; margin-right:6px;">${status}</span>
+                        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${safeTitle}</a>
+                        <span class="label ${statusCls}" style="font-size:10px; margin-right:6px;">${safeStatus}</span>
                     </h5>
                     ${meta ? `<ul class="project__meta list-meta text-zeta clr-gray-dark">${meta}</ul>` : ''}
                 </div>`;
@@ -367,10 +370,11 @@ function _renderBidStats(stats) {
     const pct = (part, whole) => whole > 0 ? Math.round((part / whole) * 100) : 0;
 
     const makeBar = ({ label, count, pct: p, cssClass = '', href = BIDS_URL, isLink = true }) => {
+        const safeLabel = escapeFrelanciaHtml(label);
         const inner = `
             <div class="projects-progress">
                 <div class="clearfix">
-                    <div class="pull-right">${count} ${label}</div>
+                    <div class="pull-right">${count} ${safeLabel}</div>
                     <div class="pull-left">${p}%</div>
                 </div>
                 <div class="progress progress--slim">
@@ -450,11 +454,13 @@ function _renderBidStats(stats) {
                     if (p >= 85) color = '#28a745';
                     else if (p >= 50) color = '#ffc107';
                     else if (p >= 25) color = '#17a2b8';
+                    const safeUrl = escapeFrelanciaHtml(safeMostaqlUrl(bid.url));
+                    const safeTitle = escapeFrelanciaHtml(bid.title || 'عرض');
                     return `
-                        <a href="${bid.url || '#'}" ${bid.url ? 'target="_blank"' : ''} class="progress__bar docs-creator">
+                        <a href="${safeUrl}" ${bid.url ? 'target="_blank" rel="noopener noreferrer"' : ''} class="progress__bar docs-creator">
                             <div class="projects-progress" title="تاريخ التقديم: ${appliedAtStr}">
                                 <div class="clearfix">
-                                    <div class="pull-right" style="max-width: 65%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${bid.title || 'عرض'}</div>
+                                    <div class="pull-right" style="max-width: 65%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeTitle}</div>
                                     <div class="pull-left frelancia-countdown" data-ms-left="${msLeft}" style="color:${color}; font-family:monospace; font-weight:bold; letter-spacing:0.5px; direction:ltr;">--:--:--</div>
                                 </div>
                                 <div class="progress progress--slim">

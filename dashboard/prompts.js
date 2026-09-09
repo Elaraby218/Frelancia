@@ -14,13 +14,13 @@ function renderPrompts(prompts) {
     list.innerHTML = prompts.map((p, i) => `
         <div class="prompt-card">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                <h4 style="font-weight: 800; font-size: 16px; color: var(--text-title);">${p.title}</h4>
+                <h4 style="font-weight: 800; font-size: 16px; color: var(--text-title);">${escapeDashboardHtml(p.title)}</h4>
                 <div style="display: flex; gap: 8px;">
                     <button data-index="${i}" class="btn-icon btn-edit-prompt" style="background: none; border: none; color: var(--text-muted); cursor: pointer;"><i class="fas fa-edit"></i></button>
                     <button data-index="${i}" class="btn-icon btn-delete-prompt" style="background: none; border: none; color: var(--danger); cursor: pointer;"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
-            <p style="font-size: 13px; color: var(--text-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.content}</p>
+            <p style="font-size: 13px; color: var(--text-body); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${escapeDashboardHtml(p.content)}</p>
         </div>
     `).join('');
 

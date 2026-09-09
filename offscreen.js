@@ -7,16 +7,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log(`Offscreen: Received action: ${message.action}`);
 
   if (message.action === 'playSound') {
-    playNotificationSound().then(() => sendResponse({ success: true }));
+    playNotificationSound()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   } else if (message.action === 'parseJobs') {
-    const jobs = parseMostaqlHTML(message.html);
-    sendResponse({ success: true, jobs: jobs });
+    try {
+      const jobs = parseMostaqlHTML(message.html);
+      sendResponse({ success: true, jobs });
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
   } else if (message.action === 'parseTrackedData' || message.action === 'parseProjectDetails') {
-    const data = parseProjectDetails(message.html);
-    sendResponse({ success: true, data: data });
+    try {
+      const data = parseProjectDetails(message.html);
+      sendResponse({ success: true, data });
+    } catch (error) {
+      sendResponse({ success: false, error: error.message });
+    }
   } else if (message.action === 'playTrackedSound') {
-    playTrackedSound().then(() => sendResponse({ success: true }));
+    playTrackedSound()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 });
@@ -55,7 +67,7 @@ function parseMostaqlHTML(html) {
         const metaItems = item.querySelectorAll('.project__meta li');
         const bidsText = metaItems.length >= 3 ? metaItems[2].textContent.replace(/\s+/g, ' ').trim() : '';
 
-        jobs.push({ id, title, url, poster, time, postedAt, bidsText, budget: 'غير محدد' });
+        jobs.push({ id, title, url, poster, time, postedAt, bidsText, budget: '' });
     });
 
     // Strategy 1: Table Rows (Classic View)
@@ -70,11 +82,12 @@ function parseMostaqlHTML(html) {
                 if (!seenIds.has(id)) {
                     const title = link.textContent.trim();
                     const budgetEl = row.querySelector('td:nth-child(4), [class*="budget"]');
-                    const budget = budgetEl ? budgetEl.textContent.trim() : 'غير محدد';
-                    const timeEl = row.querySelector('td:nth-child(5n), .timeSince, [class*="date"]');
+                    const budget = budgetEl ? budgetEl.textContent.trim() : '';
+                    const timeEl = row.querySelector('time[datetime], time, .timeSince, [class*="date"]');
                     const time = timeEl ? timeEl.textContent.trim() : '';
+                    const postedAt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
                     seenIds.add(id);
-                    jobs.push({ id, title, budget, time, postedAt: '', poster: '', bidsText: '',
+                    jobs.push({ id, title, budget, time, postedAt, poster: '', bidsText: '',
                         url: href.startsWith('http') ? href : 'https://mostaql.com' + href });
                 }
             }
@@ -92,9 +105,10 @@ function parseMostaqlHTML(html) {
                 const id = idMatch[1];
                 if (!seenIds.has(id)) {
                     seenIds.add(id);
-                    const timeEl = card.querySelector('.timeSince, [class*="date"]');
-                    jobs.push({ id, title: link.textContent.trim(), budget: 'غير محدد',
-                        time: timeEl ? timeEl.textContent.trim() : '', postedAt: '', poster: '', bidsText: '',
+                    const timeEl = card.querySelector('time[datetime], time, .timeSince, [class*="date"]');
+                    const postedAt = timeEl ? (timeEl.getAttribute('datetime') || '') : '';
+                    jobs.push({ id, title: link.textContent.trim(), budget: '',
+                        time: timeEl ? timeEl.textContent.trim() : '', postedAt, poster: '', bidsText: '',
                         url: href.startsWith('http') ? href : 'https://mostaql.com' + href });
                 }
             }

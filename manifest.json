@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mostaql Job Notifier + AI Proposal",
-  "version": "1.2.0",
+  "version": "1.2.5",
   "description": "تنبيهات فورية للمشاريع الجديدة على مستقل مع إنشاء عروض بالذكاء الاصطناعي",
   "permissions": [
     "notifications",
@@ -15,7 +15,8 @@
     "https://mostaql.com/*",
     "https://chatgpt.com/*",
     "https://chat.openai.com/*",
-    "https://frelancia.runasp.net/*"
+    "https://frelancia.runasp.net/*",
+    "https://api.github.com/*"
   ],
   "content_scripts": [
     {

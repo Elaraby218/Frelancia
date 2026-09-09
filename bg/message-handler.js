@@ -20,25 +20,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       id: 'test-' + Date.now(),
       title: 'هذا إشعار تجريبي - مشروع تطوير موقع إلكتروني',
       budget: '500 $',
-      url: 'https://mostaql.com/projects'
+      url: 'https://mostaql.com/project/1-notification-test'
     }];
-    showNotification(testJobs);
-    sendResponse({ success: true });
+    showNotification(testJobs)
+      .then((notificationId) => sendResponse({ success: true, notificationId }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
   if (message.action === 'testSound') {
-    playSound();
-    sendResponse({ success: true });
+    playSound()
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
   if (message.action === 'updateAlarm') {
-    const interval = parseInt(message.interval) || 1;
-    chrome.alarms.clear('checkJobs');
-    chrome.alarms.create('checkJobs', { periodInMinutes: interval });
-    console.log(`Alarm 'checkJobs' updated to ${interval} minutes.`);
-    sendResponse({ success: true, interval: interval });
+    const interval = normalizeCheckInterval(message.interval);
+    chrome.alarms.create('checkJobs', {
+      delayInMinutes: 0.5,
+      periodInMinutes: interval
+    }).then(() => {
+      console.log(`Alarm 'checkJobs' updated to ${interval} minutes.`);
+      sendResponse({ success: true, interval });
+    }).catch((error) => {
+      sendResponse({ success: false, error: error.message });
+    });
     return true;
   }
 
@@ -63,23 +70,24 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === 'clearHistory') {
     chrome.storage.local.set({
       seenJobs: [],
+      recentJobs: [],
       stats: {
         lastCheck: null,
+        lastAttempt: null,
+        lastError: null,
         todayCount: 0,
         todayDate: new Date().toDateString()
-      }
-    }).then(() => sendResponse({ success: true }));
+      },
+      mostaqlBackoffUntil: null
+    })
+      .then(() => sendResponse({ success: true }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
     return true;
   }
 
   if (message.action === 'debugFetch') {
-    fetch(MOSTAQL_URLS.all)
-      .then(r => r.text())
-      .then(html => {
-        console.log('HTML Preview (first 2000 chars):');
-        console.log(html.substring(0, 2000));
-        sendResponse({ success: true, length: html.length });
-      })
+    fetchJobs(MOSTAQL_URLS.all)
+      .then(jobs => sendResponse({ success: true, jobs: jobs.length }))
       .catch(e => sendResponse({ success: false, error: e.message }));
     return true;
   }

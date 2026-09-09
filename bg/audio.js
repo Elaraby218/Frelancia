@@ -13,14 +13,10 @@ async function playTrackedSound() {
 
 async function triggerOffscreenAction(action) {
   try {
-    await setupOffscreenDocument();
-    await new Promise(r => setTimeout(r, 200));
-
-    chrome.runtime.sendMessage({ action: action }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error(`Error sending ${action}:`, chrome.runtime.lastError.message);
-      }
-    });
+    const response = await sendOffscreenMessage({ action });
+    if (!response?.success) {
+      throw new Error(response?.error || `Offscreen action "${action}" failed.`);
+    }
   } catch (error) {
     console.error(`Error in triggerOffscreenAction (${action}):`, error);
   }

@@ -1,6 +1,6 @@
 // ==========================================
 // bg/tracker.js — Tracked project change monitoring
-// Depends on: offscreen.js, notifications.js (showTrackedNotification), audio.js (playTrackedSound)
+// Depends on: fetcher.js, notifications.js (showTrackedNotification), audio.js (playTrackedSound)
 // ==========================================
 
 async function checkTrackedProjects() {
@@ -16,21 +16,10 @@ async function checkTrackedProjects() {
   for (const id of projectIds) {
     const project = trackedProjects[id];
     try {
-      const response = await fetch(project.url, {
-        cache: 'no-store',
-        method: 'GET',
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
-        headers: {
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.9',
-          'Accept-Language': 'ar,en;q=0.9',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }
-      });
-      if (!response.ok) continue;
-
-      const html = await response.text();
-      const currentData = await parseTrackedDataOffscreen(html);
+      const currentData = await fetchProjectDetails(
+        project.url,
+        settings.authenticatedPolling === true
+      );
 
       if (currentData) {
         let changed = false;
@@ -51,9 +40,9 @@ async function checkTrackedProjects() {
           const isEnabled = data.notificationsEnabled !== false;
 
           if (isEnabled) {
-            showTrackedNotification(project, changeMsg);
+            await showTrackedNotification(project, changeMsg);
             if (settings.sound) {
-              playTrackedSound();
+              await playTrackedSound();
             }
           } else {
             console.log('Notifications are toggled off. Skipping alert for tracked project update.');

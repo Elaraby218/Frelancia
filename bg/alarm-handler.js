@@ -6,39 +6,46 @@
 /* global signalRClient */
 
 chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'checkJobs') {
-    const data = await chrome.storage.local.get(['settings']);
-    const notificationMode = (data.settings || {}).notificationMode || 'auto';
+  try {
+    if (alarm.name === 'checkJobs') {
+      const data = await chrome.storage.local.get(['settings']);
+      const settings = data.settings || {};
+      const notificationMode = settings.notificationMode || 'auto';
 
-    checkTrackedProjects();
+      if (settings.systemEnabled === false) {
+        console.log('Notification system is paused; skipping scheduled check.');
+        return;
+      }
 
-    if (notificationMode === 'polling') {
-      console.log('📡 Notification mode: polling — checking for new jobs');
-      checkForNewJobs();
+      if (notificationMode === 'polling') {
+        console.log('📡 Notification mode: polling — checking for new jobs');
+        await Promise.all([checkForNewJobs(), checkTrackedProjects()]);
 
-    } else if (notificationMode === 'signalr') {
-      await initializeSignalR();
+      } else if (notificationMode === 'signalr') {
+        await Promise.all([initializeSignalR(), checkTrackedProjects()]);
 
-    } else {
-      await initializeSignalR();
-
-      const isSignalRActive = SIGNALR_AVAILABLE
-        && typeof signalRClient !== 'undefined'
-        && signalRClient.isConnected;
-
-      if (!isSignalRActive) {
-        console.log('⚠️ SignalR not connected, using polling fallback for new jobs');
-        checkForNewJobs();
+      } else {
+        // A connected hub does not prove that its remote scraper is producing
+        // events. Poll as a safety net; seenJobs de-duplicates both sources.
+        console.log('Automatic mode: running the scheduled Mostaql safety poll.');
+        await Promise.all([
+          initializeSignalR(),
+          checkForNewJobs(),
+          checkTrackedProjects()
+        ]);
       }
     }
-  }
 
-  if (alarm.name === 'signalRReconnect') {
-    console.log('SignalR: Reconnect alarm fired, attempting to reconnect...');
-    const d = await chrome.storage.local.get(['settings']);
-    const mode = (d.settings || {}).notificationMode || 'auto';
-    if (mode !== 'polling') {
-      await initializeSignalR();
+    if (alarm.name === 'signalRReconnect') {
+      console.log('SignalR: Reconnect alarm fired, attempting to reconnect...');
+      const d = await chrome.storage.local.get(['settings']);
+      const settings = d.settings || {};
+      const mode = settings.notificationMode || 'auto';
+      if (settings.systemEnabled !== false && mode !== 'polling') {
+        await initializeSignalR();
+      }
     }
+  } catch (error) {
+    console.error(`Alarm "${alarm.name}" failed:`, error);
   }
 });

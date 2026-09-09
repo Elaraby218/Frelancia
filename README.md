@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-Chrome-orange.svg)
 
@@ -95,6 +95,8 @@
 ## 🔒 Privacy & Security
 
 - **Local Storage**: All your settings and data are stored locally on your device.
+- **Anonymous Mostaql polling by default**: Background checks use `credentials: omit`; authenticated polling is an explicit opt-in setting and is restricted to `https://mostaql.com`.
+- **Polite polling**: The all-projects page replaces overlapping category requests when enabled, the minimum interval is two minutes, and 403/429/server errors trigger automatic backoff.
 - **Direct API Calls**: Your API keys are used directly to communicate with AI providers; no data is sent to intermediate servers.
 - **Transparency**: Open-source code for full auditability.
 

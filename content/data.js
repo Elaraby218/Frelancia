@@ -156,7 +156,7 @@ function getBudgetFromPage() {
     const text = budgetEl.textContent.trim();
     if (!text) return 0;
 
-    const matches = text.replace(/,/g, '').match(/\d+(\.\d+)?/g);
+    const matches = normalizeFrelanciaDigits(text).replace(/[,٬]/g, '').match(/\d+(\.\d+)?/g);
     if (!matches || matches.length === 0) return 0;
 
     const values = matches.map(m => parseFloat(m));

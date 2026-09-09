@@ -72,6 +72,13 @@ function setupEventListeners() {
         checkBtn.disabled = false;
         checkBtn.innerHTML = originalContent;
         loadStats();
+
+        if (chrome.runtime.lastError || !response?.success) {
+          const error = chrome.runtime.lastError?.message || response?.error || 'تعذر إكمال الفحص.';
+          showPopupReport(error, false);
+        } else {
+          showPopupReport(`تم الفحص بنجاح. المشاريع الجديدة: ${response.newJobs || 0}`, true);
+        }
       });
     });
   }
@@ -93,7 +100,7 @@ function setupEventListeners() {
 
         if (response && response.success) {
           connReport.className = 'connection-report success';
-          connReport.textContent = `✓ الاتصال ناجح. تم جلب ${response.length} بايت من موقع مستقل.`;
+          connReport.textContent = `✓ الاتصال ناجح. تم اكتشاف ${response.jobs} مشروعًا في صفحة مستقل.`;
         } else {
           connReport.className = 'connection-report error';
           connReport.textContent = `✗ فشل الاتصال: ${response?.error || 'خطأ غير معروف'}. حاول فتح Mostaql.com أولاً.`;
@@ -135,4 +142,11 @@ function updateToggleUI(button, isEnabled) {
     button.className = 'btn toggle-off';
     button.innerHTML = '<i class="fas fa-bell-slash"></i><span>الإشعارات: متوقفة</span>';
   }
+}
+
+function showPopupReport(message, success) {
+  const report = document.getElementById('connectionReport');
+  if (!report) return;
+  report.className = `connection-report ${success ? 'success' : 'error'}`;
+  report.textContent = message;
 }
